@@ -12,8 +12,6 @@ library(fgsea)
 library(ggplot2)
 
 # Set up ------------------------------------------------------------------------------------------
-# Data can be downloaded from GEO at https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE176078
-
 setwd("/Users/addie/Dropbox (Personal)/Single-cell_breast_cancer/AnalysisAdrienne")
 #setwd("~/DropboxMGB/Projects/Single-cell_breast_cancer/AnalysisAdrienne") # for Peter
 rm(list=ls())
@@ -295,8 +293,15 @@ signature_scoring <- function(gene_set_names, obj, gsea_data, subtype_str){
   data_master[is.na(data_master)] <- 0
   data_master$Celltype <- as.character(data_master$Celltype)
   
+  for(celltype in unique(data_master$Celltype)){
+    if(is.numeric(get(paste0(celltype, subtype_str))) == F) {
+      data_master$Enrich_Score[data_master$Celltype == celltype] <- NA
+    }
+  }
   
   data_master$Celltype <- gsub("_", " ", data_master$Celltype)
+  
+  
   
   return(data_master)
 }
@@ -331,7 +336,7 @@ subset_masterdata <- function(subtype_str){
     # Generate empty list of matrices
     expr.ls <- vector(mode = "list", length = length(unique(obj$orig.ident)))
     names(expr.ls) <- unique(obj$orig.ident)
-    noCell = FALSE
+    noCell <- FALSE
     
     # For each donor, get the assay data for the cell type being iterated over
     for (n in unique(obj$orig.ident)) {
@@ -343,33 +348,34 @@ subset_masterdata <- function(subtype_str){
       # Not all cell types are present in each donor; this accounts for that
       error=function(e){
         print(paste0(n," : no cells found"))
-        noCell <<- TRUE
+        noCell <- TRUE
       })
       if(noCell == TRUE){
         # Remove the donor spaces and expression spaces from the corresponding
         # lists if a given donor doesn't have the cell type
-        age_matrix2[[n]] <- NA
+        age_matrix2[n] <<- NA
         expr.ls[[n]] <- NA
-        noCell <<- FALSE
-      }
-    }
+        noCell <- FALSE
+      }}
+    print("removing values from expr.ls")
+    expr.ls <<- unlist(expr.ls)
+    print(length(expr.ls))
+    
+    print("removing values from age_matrix2")
+    age_matrix2 <<- na.omit(age_matrix2)
+    print(length(age_matrix2))
     print("made expr.ls")
     
-    # Subset the age matrix and expression matrix to exclude donors where no cells
-    # of that type are present
-    age_matrix2 <- na.omit(age_matrix2)
-    expr.ls <- expr.ls[is.na(expr.ls) == F]
-    
     # If fewer than half of the donors have the cell type, don't run the correlation
-    if(length(expr.ls) <= 0.5*length(donors)){
+    if(length(unlist(expr.ls)) <= 0.5*length(donors)){
       print("less than half of donors represented")
       corresults <- NA
-      assign(x = paste0(cell_type[i], subtype_str), corresults)
+      assign(x = paste0(cell_type[i], subtype_str), corresults, envir = .GlobalEnv)
     } else{
       
       print("expr.ls formatted")
       # Take the row means of each element in the list
-      means.ls <- lapply(expr.ls, rowMeans)
+      means.ls <- lapply(unlist(expr.ls), rowMeans)
       #print("mean.ls made")
       
       # Generate a matrix with genes x samples
@@ -394,7 +400,8 @@ subset_masterdata <- function(subtype_str){
       # Remove any correlation coefficients of 0; these are arbitrarily ranked
       # and will affect outcome of GSEA if included
       corresults <- corresults[corresults != 0]
-      assign(x = paste0(cell_type[i], subtype_str), corresults)}} 
+      assign(x = paste0(cell_type[i], subtype_str), corresults, envir = .GlobalEnv)}
+    } 
   
   # Set the working directory and import the GSEA file for analysis
   setwd("/Users/addie/Desktop/GSEA")
@@ -430,10 +437,10 @@ subset_masterdata <- function(subtype_str){
     } else{
       print("no vector found")
       myGO = fgsea::gmtPathways(GO_file)
-      resultsnone <- data.frame(matrix(0, nrow = length(myGO), ncol = 3))
+      resultsnone <- data.frame(matrix(NA, nrow = length(myGO), ncol = 3))
       resultsnone[,2] <- names(myGO)
       resultsnone[,1] <- rep(cell_type[j], 50)
-      resultsnone[3] <- rep(0, 50)
+      resultsnone[3] <- rep(NA, 50)
       colnames(resultsnone) <- c("Cell", "Pathway", "NES")
       results_df=rbind(results_df, resultsnone)}
     
@@ -444,7 +451,18 @@ subset_masterdata <- function(subtype_str){
     results_df2=results_df
     results_df2=results_df2[-1,]
     
-    data_wide <- spread(results_df2, key = "Pathway", value = "NES", fill = 0)
+    data_wide <- spread(results_df2, key = "Pathway", value = "NES", fill = NA)
+    
+    index <- rowSums(is.na(data_wide)) != ncol(data_wide)-1
+    index2 <- which(index == "TRUE")
+    
+    for(i in index2){
+      if(rowSums(is.na(data_wide[1,])) != ncol(data_wide)-1){
+        nas <- which(is.na(data_wide[i,]) == TRUE)
+        data_wide[i, nas] <- 0
+      
+      }
+    }
     
     
     row.names(data_wide)=data_wide[,1]
@@ -459,40 +477,74 @@ subset_masterdata <- function(subtype_str){
   
   
   data_master <- signature_scoring(hallmark_gene_set_names, obj, data_wide4, subtype_str)
+  
+  for(type in cell_type){
+    rm(list = paste0(type, subtype_str))
+  }
   return(data_master)
 }
+
 
 # Run the functions for TNBC and ER+
 data_master_TNBC <- subset_masterdata("TNBC")
 data_master_ER <- subset_masterdata("ER+")
 
+for(type in unique(seu.all$celltype_minor)){
+  rm(list = paste0(type, "ER+"))
+  rm(list = paste0(type, "TNBC"))
+}
+
 maxboth <- max(c(abs(data_master_TNBC$Enrich_Score), 
-                 abs(data_master_ER$Enrich_Score)))
+                 abs(data_master_ER$Enrich_Score)), na.rm = T)
+
+data_master_TNBC2 <- data_master_TNBC[1,]
+data_master_TNBC2 <- data_master_TNBC2[-1,]
 
 # Subset the data to just be complete cases
-data_master_TNBC2 <- data_master_TNBC[complete.cases(data_master_TNBC),]
-data_master_ER2 <- data_master_ER[complete.cases(data_master_ER),]
+for(pathway in unique(data_master_TNBC$Pathway)){
+  data1 <- data_master_TNBC[data_master_TNBC$Pathway == pathway,]
+  data2 <- data_master_ER[data_master_ER$Pathway == pathway,]
+  if(sum(na.omit(data2$Enrich_Score), na.omit(data1$Enrich_Score)) != 0){
+    data_master_TNBC2 <- rbind(data_master_TNBC2, data2)
+  }
+}
+
+data_master_ER2 <- data_master_ER[1,]
+data_master_ER2 <- data_master_ER2[-1,]
+
+# Subset the data to just be complete cases
+for(pathway in unique(data_master_ER$Pathway)){
+  data1 <- data_master_TNBC[data_master_TNBC$Pathway == pathway,]
+  data2 <- data_master_ER[data_master_ER$Pathway == pathway,]
+  if(sum(na.omit(data2$Enrich_Score), na.omit(data1$Enrich_Score)) != 0){
+    data_master_ER2 <- rbind(data_master_ER2, data2)
+  }
+}
+
 
 
 # Bubble plotting function
 bubble_plotting <- function(data, subtype_str, max){
+  
   # Define groupings of Hallmark Pathways (all 50)
   Miscellaneous <- c("XENOBIOTIC METABOLISM", "WNT BETA CATENIN SIGNALING", "SPERMATOGENESIS",
-                     "PEROXISOME", "PANCREAS BETA CELLS", "NOTCH SIGNALING", "MYOGENESIS",
-                     "MTORC1 SIGNALING", "HEME METABOLISM", "HEDGEHOG SIGNALING", "FATTY ACID METABOLISM",
+                     "PANCREAS BETA CELLS", "NOTCH SIGNALING", "MYOGENESIS",
+                      "HEME METABOLISM", "HEDGEHOG SIGNALING", 
                      "COAGULATION", "CHOLESTEROL HOMEOSTASIS", "BILE ACID METABOLISM",
-                     "ANGIOGENESIS", "ANDROGEN RESPONSE", "ADIPOGENESIS")
+                     "ANGIOGENESIS")
   Cell_stress <- c("UV RESPONSE UP", "UV RESPONSE DN", "UNFOLDED PROTEIN RESPONSE",
-                   "REACTIVE OXYGEN SPECIES PATHWAY", "P53 PATHWAY", "HYPOXIA", "G2M CHECKPOINT",
+                   "REACTIVE OXYGEN SPECIES PATHWAY", "P53 PATHWAY", "HYPOXIA", "G2M CHECKPOINT", "E2F TARGETS",
                    "DNA REPAIR", "APOPTOSIS")
   Inflammation <- c("TNFA SIGNALING VIA NFKB", "INTERFERON GAMMA RESPONSE", "INTERFERON ALPHA RESPONSE",
+                    "IL6 JAK STAT3 SIGNALING", "IL2 STAT5 SIGNALING",
                     "INFLAMMATORY RESPONSE", "COMPLEMENT", "ALLOGRAFT REJECTION")
-  Cell_cycle_metabolism <- c("PROTEIN SECRETION", "PI3K AKT MTOR SIGNALING",
-                             "OXIDATIVE PHOSPHORYLATION", "MYC TARGETS V2", "MYC TARGETS V1", "MITOTIC SPINDLE",
-                             "GLYCOLYSIS", "E2F TARGETS")
-  Cancer <- c("TGF BETA SIGNALING", "KRAS SIGNALING UP", "KRAS SIGNALING DN", "IL6 JAK STAT3 SIGNALING", "IL2 STAT5 SIGNALING",
+  Cell_cycle_metabolism <- c("PROTEIN SECRETION", "PEROXISOME", 
+                             "OXIDATIVE PHOSPHORYLATION", "MTORC1 SIGNALING",
+                             "GLYCOLYSIS", "FATTY ACID METABOLISM", "ADIPOGENESIS")
+  Cancer <- c("TGF BETA SIGNALING", "PI3K AKT MTOR SIGNALING", "MYC TARGETS V2", "MYC TARGETS V1", "MITOTIC SPINDLE",
+              "KRAS SIGNALING UP", "KRAS SIGNALING DN", 
               "ESTROGEN RESPONSE EARLY", "ESTROGEN RESPONSE LATE", "EPITHELIAL MESENCHYMAL TRANSITION",
-              "APICAL SURFACE", "APICAL JUNCTION")
+              "APICAL SURFACE", "APICAL JUNCTION", "ANDROGEN RESPONSE")
   
   # Subset the Hallmark Pathways to just be those represented in the complete cases
   Miscellaneous <- Miscellaneous[Miscellaneous %in% unique(c(data_master_TNBC2$Pathway, data_master_ER2$Pathway))]
@@ -545,8 +597,8 @@ bubble_plotting <- function(data, subtype_str, max){
       guides(colour = guide_legend(order = 1),
              size = guide_legend(order = 2)) +
       scale_shape_identity() +
-      theme(axis.text.x = element_text(size = 6, angle = 45, hjust=1, vjust = 1)) +
-      theme(axis.text.y = element_text(size = 6))+
+      theme(axis.text.x = element_text(size = 6, angle = 90, hjust=1, vjust = 1)) +
+      theme(axis.text.y = element_text(size = 8))+
       theme(legend.position = "right")+
       theme(legend.key.size = unit(0.3, 'cm'))+
       scale_size(range = c(0, 2))
@@ -574,11 +626,11 @@ bubble_plotting <- function(data, subtype_str, max){
                    `Miscellaneous`, ncol = 1, common.legend = T, align = "v", heights = 
                      c(length(hallmark_list[["Cancer"]]), length(hallmark_list[["Inflammation"]]),
                        length(hallmark_list[["Cell_stress"]]), length(hallmark_list[["Cell_cycle_metabolism"]]),
-                       length(hallmark_list[["Miscellaneous"]]) + 5
-                     ), font.label = list(size = 6) 
+                       length(hallmark_list[["Miscellaneous"]]) + 8
+                     ), font.label = list(size = 8) 
                    ) 
-    ggsave(paste0(subtype_str, "_20230320_final.pdf"), q, device = "pdf",
-           height = 7, width = 4.5, units = "in")
+    ggsave(paste0(subtype_str, "_20230328_final.pdf"), q, device = "pdf",
+           height = 7, width = 5, units = "in")
     
     # Make the supplemental bubble plot with all 50 pathays
     data$Celltype <- gsub("CAFs MSC ", "", data$Celltype)
@@ -614,8 +666,8 @@ bubble_plotting <- function(data, subtype_str, max){
       guides(colour = guide_legend(order = 1),
              size = guide_legend(order = 2)) +
       scale_shape_identity() +
-      theme(axis.text.x = element_text(size = 6, angle = 45, hjust=1, vjust = 1)) +
-      theme(axis.text.y = element_text(size = 6))+
+      theme(axis.text.x = element_text(size = 6, angle = 90, hjust=1, vjust = 1)) +
+      theme(axis.text.y = element_text(size = 8))+
       theme(legend.position = "right")+
       theme(legend.key.size = unit(0.3, 'cm'))+
       scale_size(range = c(0, 2))
