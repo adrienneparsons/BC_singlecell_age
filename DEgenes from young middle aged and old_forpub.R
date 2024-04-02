@@ -61,7 +61,7 @@ ER_hp_old <- clin_metabric[clin_metabric$AGE_AT_DIAGNOSIS > 65 &
                              clin_metabric$TUMOR_STAGE <= 2,]
 
 ER_all <- clin_metabric[clin_metabric$THREEGENE == "ER+/HER2- High Prolif" |
-                          clin_metabric$THREEGENE == "ER+/HER2- High Prolif",]
+                          clin_metabric$THREEGENE == "ER+/HER2- Low Prolif",]
 
 ER_all <- ER_all[ER_all$TUMOR_STAGE <= 2,]
 
@@ -81,18 +81,13 @@ ER_old <- rbind(ER_hp_old, ER_lp_old)
 
 # Read in and format the gene expression data for TNBC and ER+
 # THESE DATA ARE TOO LARGE FOR GITHUB
-TNBC <- read.table("/Users/addie/Dropbox (Partners HealthCare)/Single-cell_breast_cancer/AnalysisAdrienne/Cibersort input data/Cibersort_Inputs/metabric_TNBC.txt",
-                   sep = "\t")
-colnames(TNBC) <- TNBC[1,]
+TNBC <- read.csv("/Users/addie/Dropbox (Partners HealthCare)/Single-cell_breast_cancer/Data_METABRIC/2024_METABRIC_TNBC.csv")
 rownames(TNBC) <- TNBC[,1]
 TNBC <- TNBC[,-1]
-TNBC <- TNBC[-1,]
 
-ER <- read.table("/Users/addie/Dropbox (Partners HealthCare)/Single-cell_breast_cancer/AnalysisAdrienne/Cibersort input data/Cibersort_Inputs/metabric_ER+.txt",
-                   sep = "\t")
-colnames(ER) <- ER[1,]
+
+ER <- read.csv("/Users/addie/Dropbox (Partners HealthCare)/Single-cell_breast_cancer/Data_METABRIC/2024_METABRIC_ER.csv")
 rownames(ER) <- ER[,1]
-ER <- ER[-1,]
 ER <- ER[,-1]
 
 # Get an annotation of gene names in the correct order for later
@@ -100,16 +95,12 @@ TNBC_genes <- rownames(TNBC)
 ER_genes <- rownames(ER)
 
 # Prep the matrix for DE gene analysis
-TNBC2 <- sapply(data.frame(TNBC), as.numeric)
-rownames(TNBC2) <- TNBC_genes
-TNBC3 <- exp(TNBC2)
+TNBC3 <- exp(TNBC)
 TNBC4 <- sapply(data.frame(TNBC3), as.integer)
 rownames(TNBC4) <- TNBC_genes
 
-# Prep the ER+ matrix for DE gene analysis
-ER2 <- sapply(data.frame(ER), as.numeric)
-rownames(ER2) <- ER_genes
-ER3 <- exp(ER2)
+# Prep the ER+ matrix for DE gene analysi
+ER3 <- exp(ER)
 ER4 <- sapply(data.frame(ER3), as.integer)
 rownames(ER4) <- ER_genes
 
@@ -123,8 +114,19 @@ for(df in c("TNBC_old", "TNBC_mid", "TNBC_young", "TNBC_all")){
   donors_early <- make.names(dfi$PATIENT_ID[dfi$RFS_MONTHS < 24 & dfi$RFS_STATUS == "1:Recurred"])
   donors_late <- make.names(dfi$PATIENT_ID[dfi$RFS_MONTHS > 120])
   
+  print("number early recurrence")
   print(length(donors_early))
+  print("mean age early")
+  print(mean(as.numeric(dfi$AGE_AT_DIAGNOSIS[dfi$PATIENT_ID %in% donors_early])))
+  print("number late recurrence")
   print(length(donors_late))
+  print("mean age late")
+  print(mean(as.numeric(dfi$AGE_AT_DIAGNOSIS[dfi$PATIENT_ID %in% donors_late])))
+  print("mean recurrence time early")
+  print(mean(as.numeric(dfi$RFS_MONTHS[dfi$PATIENT_ID %in% donors_early])))
+  print("mean recurrence time late")
+  print(mean(as.numeric(dfi$RFS_MONTHS[dfi$PATIENT_ID %in% donors_late])))
+  
   
   # Make a data frame of the formatted gene expression, but only donors
   # within the early or late recurrence groups
@@ -156,8 +158,20 @@ for(df in c("ER_old", "ER_mid", "ER_young", "ER_all")){
   donors_early <- make.names(dfi$PATIENT_ID[dfi$RFS_MONTHS < 24 & dfi$RFS_STATUS == "1:Recurred"])
   donors_late <- make.names(dfi$PATIENT_ID[dfi$RFS_MONTHS > 120])
   
+  print("number early recurrence")
   print(length(donors_early))
+  print("mean age early")
+  print(mean(as.numeric(dfi$AGE_AT_DIAGNOSIS[dfi$PATIENT_ID %in% donors_early])))
+  print("number late recurrence")
   print(length(donors_late))
+  print("mean age late")
+  print(mean(as.numeric(dfi$AGE_AT_DIAGNOSIS[dfi$PATIENT_ID %in% donors_late])))
+  print("mean recurrence time early")
+  print(mean(as.numeric(dfi$RFS_MONTHS[dfi$PATIENT_ID %in% donors_early])))
+  print("mean recurrence time late")
+  print(mean(as.numeric(dfi$RFS_MONTHS[dfi$PATIENT_ID %in% donors_late])))
+  
+  #assign(df, donors_late)
   
   df2 <- data.frame(cbind(ER4[,colnames(ER4) %in% donors_early],
                           ER4[,colnames(ER4) %in% donors_late]))
@@ -228,14 +242,17 @@ tnbcall <- rownames(TNBC_all_res)
 
 library(UpSetR)
 # Dataset
-listinput <- list(ER_Young = eryoung, ER_Mid = ermid, ER_Old = erold,
+listinput_TNBC <- list(
                   TNBC_Young = tnbcyoung, TNBC_Mid = tnbcmid, TNBC_Old = tnbcold,
-                  TNBC_All = tnbcall, ER_All = erall)
+                  TNBC_All = tnbcall)
+
+listinput_ER <- list(ER_Young = eryoung, ER_Mid = ermid, ER_Old = erold,
+                       ER_All = erall)
 
 # Plot
-p <- upset(fromList(listinput), 
+p <- upset(fromList(listinput_TNBC), 
       nintersects = 40,
-      nsets = 8, 
+      nsets = 4, 
       order.by = "freq", 
       decreasing = T, 
       mb.ratio = c(0.6, 0.4),
@@ -243,6 +260,18 @@ p <- upset(fromList(listinput),
       text.scale = 1.1, 
       point.size = 2.8, 
       line.size = 1
+)
+
+q <- upset(fromList(listinput_ER), 
+           nintersects = 40,
+           nsets = 4, 
+           order.by = "freq", 
+           decreasing = T, 
+           mb.ratio = c(0.6, 0.4),
+           number.angles = 0, 
+           text.scale = 1.1, 
+           point.size = 2.8, 
+           line.size = 1
 )
 
 dev.off()
@@ -321,124 +350,3 @@ ER_surv <- survfit2(Surv(RFS_MONTHS, RFS_STATUS) ~ c(OVERALL), data = ER2) %>%
 
 ggsave("TNBC_surv.pdf", TNBC_surv, device = "pdf")
 ggsave("ER_surv.pdf", ER_surv, device = "pdf")
-
-##########################################################################
-# GSEA analysis to identify Hallmark pathway differences in 6 groups
-# Load in the Hallmark pathways
-myGO = fgsea::gmtPathways("/Users/addie/Desktop/GSEA/h.all.v2022.1.Hs.symbols.gmt")
-myGO2= fgsea::gmtPathways("/Users/addie/Desktop/GSEA/c2.all.v2023.2.Hs.symbols.gmt")
-  
-library(fgsea)
-
-# Get numeric vectors of the fold changes and label with genes for each group
-tnbc_o_genes <- TNBC_old_res$log2FoldChange
-names(tnbc_o_genes) <- rownames(TNBC_old_res)
-
-tnbc_m_genes <- TNBC_mid_res$log2FoldChange
-names(tnbc_m_genes) <- rownames(TNBC_mid_res)
-
-tnbc_y_genes <- TNBC_young_res$log2FoldChange
-names(tnbc_y_genes) <- rownames(TNBC_young_res)
-
-ER_o_genes <- ER_old_res$log2FoldChange
-names(ER_o_genes) <- rownames(ER_old_res)
-
-ER_m_genes <- ER_mid_res$log2FoldChange
-names(ER_m_genes) <- rownames(ER_mid_res)
-
-ER_y_genes <- ER_young_res$log2FoldChange
-names(ER_y_genes) <- rownames(ER_young_res)
-
-tnbc_a_genes <- TNBC_all_res$log2FoldChange
-names(tnbc_a_genes) <- rownames(TNBC_all_res)
-
-ER_a_genes <- ER_all_res$log2FoldChange
-names(ER_a_genes) <- rownames(ER_all_res)
-
-# Run GSEA for TNBC
-gsea_h_TNBC_young <- fgsea(pathways = myGO,
-                         stats = tnbc_y_genes)
-
-gsea_h_TNBC_mid <- fgsea(pathways = myGO,
-                         stats = tnbc_m_genes)
-
-gsea_h_TNBC_old <- fgsea(pathways = myGO,
-                         stats = tnbc_o_genes)
-
-gsea_h_TNBC_all <- fgsea(pathways = myGO,
-                       stats = tnbc_a_genes)
-
-gsea_c_TNBC_young <- fgsea(pathways = myGO2,
-                           stats = tnbc_y_genes)
-
-gsea_c_TNBC_mid <- fgsea(pathways = myGO2,
-                         stats = tnbc_m_genes)
-
-gsea_c_TNBC_old <- fgsea(pathways = myGO2,
-                         stats = tnbc_o_genes)
-
-gsea_c_TNBC_all <- fgsea(pathways = myGO2,
-                         stats = tnbc_a_genes)
-
-
-
-# Run GSEA for ER+
-gsea_h_ER_young <- fgsea(pathways = myGO,
-                         stats = ER_y_genes)
-
-gsea_h_ER_mid <- fgsea(pathways = myGO,
-                       stats = ER_m_genes)
-
-gsea_h_ER_old <- fgsea(pathways = myGO,
-                       stats = ER_o_genes)
-
-gsea_h_ER_all <- fgsea(pathways = myGO,
-                     stats = ER_a_genes)
-
-gsea_c_ER_young <- fgsea(pathways = myGO2,
-                         stats = ER_y_genes)
-
-gsea_c_ER_mid <- fgsea(pathways = myGO2,
-                       stats = ER_m_genes)
-
-gsea_c_ER_old <- fgsea(pathways = myGO2,
-                       stats = ER_o_genes)
-
-gsea_c_ER_all <- fgsea(pathways = myGO2,
-                       stats = ER_a_genes)
-
-
-gsea_ER_all <- rbind(gsea_h_ER_all[gsea_h_ER_all$padj < 0.05,], 
-                     gsea_c_ER_all[gsea_c_ER_all$padj < 0.05])
-
-gsea_ER_old <- rbind(gsea_h_ER_old[gsea_h_ER_old$padj < 0.05,], 
-                     gsea_c_ER_old[gsea_c_ER_old$padj < 0.05])
-
-gsea_ER_mid <- rbind(gsea_h_ER_mid[gsea_h_ER_mid$padj < 0.05,], 
-                     gsea_c_ER_mid[gsea_c_ER_mid$padj < 0.05])
-
-gsea_ER_young <- rbind(gsea_h_ER_young[gsea_h_ER_young$padj < 0.05,], 
-                     gsea_c_ER_young[gsea_c_ER_young$padj < 0.05])
-
-gsea_TNBC_all <- rbind(gsea_h_TNBC_all[gsea_h_TNBC_all$padj < 0.05,], 
-                     gsea_c_TNBC_all[gsea_c_TNBC_all$padj < 0.05])
-
-gsea_TNBC_old <- rbind(gsea_h_TNBC_old[gsea_h_TNBC_old$padj < 0.05,], 
-                     gsea_c_TNBC_old[gsea_c_TNBC_old$padj < 0.05])
-
-gsea_TNBC_mid <- rbind(gsea_h_TNBC_mid[gsea_h_TNBC_mid$padj < 0.05,], 
-                     gsea_c_TNBC_mid[gsea_c_TNBC_mid$padj < 0.05])
-
-gsea_TNBC_young <- rbind(gsea_h_TNBC_young[gsea_h_TNBC_young$padj < 0.05,], 
-                       gsea_c_TNBC_young[gsea_c_TNBC_young$padj < 0.05])
-
-for(results in c("gsea_TNBC_young", "gsea_TNBC_mid", "gsea_TNBC_old",
-                 "gsea_TNBC_all", "gsea_ER_young", "gsea_ER_mid", "gsea_ER_old",
-                 "gsea_ER_all")){
-  df <- data.frame(get(results))
-  if(nrow(df) > 0){
-    df <- apply(df,2,as.character)
-    write.csv(file = paste0(results,".csv"), df, quote = F)
-  }
-  
-}
