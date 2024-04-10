@@ -1,5 +1,6 @@
-# Data wrangling
+# Data wrangling: remove duplicated genes and break down by subtype
 ###########################################################
+# Adrienne Parsons, 2024-04-01
 
 # load packages
 library(tidyverse)

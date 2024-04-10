@@ -1,9 +1,9 @@
 # Get the DE genes between early and late recurrence donors in METABRIC
-# for age groups and disease subtype
+# for age groups and disease subtype, then visualize
+# Adrienne Parsons, 2024-04-01
 
 # First, load in the METABRIC clinical data and format
-clin_metabric <- read.table("/Users/addie/Dropbox (Partners HealthCare)/Single-cell_breast_cancer/AnalysisAdrienne/Cibersort input data/brca_metabric/data_clinical_patient.txt",
-                                 sep = "\t")
+clin_metabric <- read.table("/Users/addie/Dropbox (Partners HealthCare)/Single-cell_breast_cancer/AnalysisAdrienne/Cibersort input data/brca_metabric/data_clinical_patient.txt", sep = "\t")
 colnames(clin_metabric) <- clin_metabric[1,]
 clin_metabric <- clin_metabric[-1,]
 
