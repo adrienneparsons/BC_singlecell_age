@@ -350,11 +350,13 @@ for(res in c("top.table_ER", "top.table_TNBC")){
 setwd("/users/addie/desktop")
 # Order the significant TNBC GSEA results by decreasing NES and write to computer
 sig_gsea_TNBC <- sig_gsea_TNBC[order(sig_gsea_TNBC$NES, decreasing = T),]
+sig_gsea_TNBC <- sig_gsea_TNBC[,-c("size", "leadingEdge")]
 sig_gsea_TNBC2 <- apply(sig_gsea_TNBC,2,as.character)
 write.csv(sig_gsea_TNBC2, file = "20240507_TNBC_GSEA_inclStageIII.csv", quote = F, row.names = F)
 
 # Repeat for ER+
 sig_gsea_ER <- sig_gsea_ER[order(sig_gsea_ER$NES, decreasing = T),]
+sig_gsea_ER <- sig_gsea_ER[,-c("size", "leadingEdge")]
 sig_gsea_ER2 <- apply(sig_gsea_ER,2,as.character)
 write.csv(sig_gsea_ER2, file = "20240507_ER_GSEA_inclStageIII.csv", quote = F, row.names = F)
 

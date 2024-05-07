@@ -404,12 +404,13 @@ subset_masterdata <- function(subtype_str){
     } 
   
   # Set the working directory and import the GSEA file for analysis
-  setwd("/Users/addie/Desktop/GSEA")
+  setwd("/Users/addie/Desktop/GSEA/")
   GO_file <- "h.all.v7.4.symbols.gmt"
   
   # Run GSEA
-  results_df=data.frame(Cell="trash", Pathway="trash", NES="trash")
+  results_df=data.frame(Cell="trash", Pathway="trash", NES="trash", padj = "trash")
   for(j in 1:length(cell_type)){
+    temp2 <- list("Results" = NA, "Plot" = NA)
     if(is.numeric(get(paste0(cell_type[j], subtype_str)))){
         print(cell_type[j])
       
@@ -421,59 +422,68 @@ subset_masterdata <- function(subtype_str){
       })
         
       if(class(temp2$Results)=="data.frame"){
-        x=cbind(cell_type[j], temp2$Results[,1], temp2$Results[,6])
-        colnames(x)=c("Cell", "Pathway", "NES")
+        x=cbind(cell_type[j], temp2$Results[,1], temp2$Results[,6], temp2$Results[,3])
+        colnames(x)=c("Cell", "Pathway", "NES", "padj")
         results_df=rbind(results_df, x)} else{
           myGO = fgsea::gmtPathways(GO_file)
-          resultsnone <- data.frame(matrix(0, nrow = length(myGO), ncol = 3))
+          resultsnone <- data.frame(matrix(0, nrow = length(myGO), ncol = 4))
           resultsnone[,2] <- names(myGO)
           resultsnone[,1] <- rep(cell_type[j], 50)
-          resultsnone[3] <- rep(0, 50)
-          colnames(resultsnone) <- c("Cell", "Pathway", "NES")
+          resultsnone[,3] <- rep(0, 50)
+          resultsnone[,4] <- rep("NS", 50)
+          colnames(resultsnone) <- c("Cell", "Pathway", "NES", "padj")
           results_df=rbind(results_df, resultsnone)
         }
-
-        
+      
+      
     } else{
       print("no vector found")
       myGO = fgsea::gmtPathways(GO_file)
-      resultsnone <- data.frame(matrix(NA, nrow = length(myGO), ncol = 3))
+      resultsnone <- data.frame(matrix(NA, nrow = length(myGO), ncol = 4))
       resultsnone[,2] <- names(myGO)
       resultsnone[,1] <- rep(cell_type[j], 50)
       resultsnone[3] <- rep(NA, 50)
-      colnames(resultsnone) <- c("Cell", "Pathway", "NES")
+      resultsnone[4] <- rep(NA, 50)
+      colnames(resultsnone) <- c("Cell", "Pathway", "NES", "padj")
       results_df=rbind(results_df, resultsnone)}
     
-    }
-    
-    
-    # Prep for bubble plot
-    results_df2=results_df
-    results_df2=results_df2[-1,]
-    
-    data_wide <- spread(results_df2, key = "Pathway", value = "NES", fill = NA)
-    
-    index <- rowSums(is.na(data_wide)) != ncol(data_wide)-1
-    index2 <- which(index == "TRUE")
-    
-    for(i in index2){
-      if(rowSums(is.na(data_wide[1,])) != ncol(data_wide)-1){
-        nas <- which(is.na(data_wide[i,]) == TRUE)
-        data_wide[i, nas] <- 0
+  }
+  
+  
+  # Prep for bubble plot
+  results_df2=results_df
+  results_df2=results_df2[-1,]
+  results_df3 <- results_df2
+  results_df3$padj <- NULL
+  data_wide <- spread(results_df3, key = "Pathway", value = "NES", fill = NA)
+  
+  p_wide <- spread(results_df2, key = "Pathway", value = "padj", fill = NA)
+  ps <- pivot_longer(p_wide, cols = 3:length(p_wide))
+  
+  assign(paste0(subtype_str, "_pvals"), na.omit(ps), envir = .GlobalEnv)
+  
+  
+  index <- rowSums(is.na(data_wide)) != ncol(data_wide)-1
+  index2 <- which(index == "TRUE")
+  
+  for(i in index2){
+    if(rowSums(is.na(data_wide[1,])) != ncol(data_wide)-1){
+      nas <- which(is.na(data_wide[i,]) == TRUE)
+      data_wide[i, nas] <- 0
       
-      }
     }
-    
-    
-    row.names(data_wide)=data_wide[,1]
-    data_wide=data_wide[,-1]
-    data_wide2=as.matrix(data_wide)
-    data_wide3<- matrix(as.numeric(data_wide2),    # Convert to numeric matrix
-                        ncol = ncol(data_wide2))
-    row.names(data_wide3)=row.names(data_wide2)
-    colnames(data_wide3)=colnames(data_wide2)
-    data_wide3=rbind(data_wide3, colSums(abs(data_wide3)))
-    data_wide4=data_wide3[,order(-data_wide3[nrow(data_wide3),])]
+  }
+  
+  
+  row.names(data_wide)=data_wide[,1]
+  data_wide=data_wide[,-1]
+  data_wide2=as.matrix(data_wide)
+  data_wide3<- matrix(as.numeric(data_wide2),    # Convert to numeric matrix
+                      ncol = ncol(data_wide2))
+  row.names(data_wide3)=row.names(data_wide2)
+  colnames(data_wide3)=colnames(data_wide2)
+  data_wide3=rbind(data_wide3, colSums(abs(data_wide3)))
+  data_wide4=data_wide3[,order(-data_wide3[nrow(data_wide3),])]
   
   
   data_master <- signature_scoring(hallmark_gene_set_names, obj, data_wide4, subtype_str)
@@ -483,7 +493,6 @@ subset_masterdata <- function(subtype_str){
   }
   return(data_master)
 }
-
 
 # Run the functions for TNBC and ER+
 data_master_TNBC <- subset_masterdata("TNBC")
@@ -521,7 +530,30 @@ for(pathway in unique(data_master_ER$Pathway)){
   }
 }
 
+data_master_TNBC3 <- data_master_TNBC[,c("Pathway", "Celltype", "Cor", "Enrich_Score")]
+data_master_TNBC3$Padj <- "> 0.05"
+TNBC_pvals$name <- gsub("HALLMARK_", "", TNBC_pvals$name)
+TNBC_pvals$name <- gsub("_", " ", TNBC_pvals$name)
+TNBC_pvals$Cell <- gsub("_", " ", TNBC_pvals$Cell)
+for(i in 1:nrow(TNBC_pvals)){
+  data_master_TNBC3$Padj[data_master_TNBC3$Pathway == TNBC_pvals$name[i] & 
+                           data_master_TNBC3$Celltype == TNBC_pvals$Cell[i]] <- TNBC_pvals$value[i]
+}
 
+data_master_ER3 <- data_master_ER[,c("Pathway", "Celltype", "Cor", "Enrich_Score")]
+data_master_ER3$Padj <- "> 0.05"
+`ER+_pvals`$name <- gsub("HALLMARK_", "", `ER+_pvals`$name)
+`ER+_pvals`$name <- gsub("_", " ", `ER+_pvals`$name)
+`ER+_pvals`$Cell <- gsub("_", " ", `ER+_pvals`$Cell)
+for(i in 1:nrow(`ER+_pvals`)){
+  data_master_ER3$Padj[data_master_ER3$Pathway == `ER+_pvals`$name[i] & 
+                           data_master_ER3$Celltype == `ER+_pvals`$Cell[i] &
+                           data_master_ER3$Enrich_Score == `ER+_pvals`$NES[i]] <- `ER+_pvals`$value[i]
+}
+
+setwd("/Users/addie/desktop")
+write.csv(data_master_TNBC3, file = "TNBC_ASPENResults.csv", row.names = F, quote = F)
+write.csv(data_master_ER3, file = "ER_ASPENResults.csv", row.names = F, quote = F)
 
 # Bubble plotting function
 bubble_plotting <- function(data, subtype_str, max){
