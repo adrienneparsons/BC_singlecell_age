@@ -10,6 +10,7 @@ library(Biobase)
 library(fgsea)
 library(ggpubr)
 library(dplyr)
+library(ggrepel)
 
 # First, load in the METABRIC clinical data and format
 clin_metabric <- read.table("/Users/addie/Dropbox (Partners HealthCare)/Single-cell_breast_cancer/AnalysisAdrienne/Cibersort input data/brca_metabric/data_clinical_patient.txt",
@@ -277,15 +278,18 @@ for(df in c("top.table_ER", "top.table_TNBC")){
   # Only add gene names to the most differentially expressed genes
   dd3$label <- NA
   
-  
   # Add the gene names to any gene with adjusted p < 0.05 and magnitude fold change > 0.5
-  dd3$label[dd3$minuslog10p > -log10(0.05)] <- dd3$gene[dd3$minuslog10p > -log10(0.05)]
+
+    dd3$label[dd3$minuslog10p > -log10(0.05) & abs(dd3$logFC) > 0.5] <- dd3$gene[dd3$minuslog10p > -log10(0.05) & abs(dd3$logFC) > 0.5]
+  
+  
+  
 
   
   # Add in enrichment annotations for coloring the dots
   dd3$direction <- "enriched in older"
   dd3$direction[dd3$logFC < 0] <- "enriched in younger"
-  dd3$direction[is.na(dd3$label)] <- "0"
+  dd3$direction[dd3$minuslog10p < -log10(0.05)] <- "0"
   
   # Write a table of the genes
   dd4 <- arrange(dd3, desc(minuslog10p), desc(logFC))
@@ -295,16 +299,16 @@ for(df in c("top.table_ER", "top.table_TNBC")){
   
   # Make the volcano plot and save
   volcano <- ggplot(data=dd3, aes(x=logFC, y=minuslog10p, label = label, fill = direction)) + 
-    geom_point(size = 3, shape = 21, stroke = 0.25)+
-    geom_text(vjust = -0.5, hjust = 1, size = 1)+
+    geom_point(size = 3, shape = 21, stroke = 0)+
     xlim(c(max(dd3$abs)*-1-.25, max(dd3$abs)+.25))+theme_bw()+
     scale_fill_manual(values = c("lightgrey", "red", "blue"))+
     ylim(c(0, max(dd3$minuslog10p) + 0.5))+
-    xlab("Log2 Fold Change Difference")+
+    xlab("Log2 Fold Change")+
     ylab("-log10(FDR)")+
+    geom_text_repel(max.overlaps = 200, size = 3)+
     theme(aspect.ratio = 1)
   
-  ggsave(paste0(df, "_volcano.pdf"), volcano, device = "pdf", height = 3, width = 5)
+  ggsave(paste0(df, "_volcano2.pdf"), volcano, device = "pdf", height = 6, width = 12)
 }
 
 # Running GSEA on results
