@@ -72,8 +72,8 @@ colnames(age_matrix) <- "age"
 # New Working Directory
 setwd("/Users/addie/desktop/Proportions/TNBC")
 
-# Subset to the TNBC donors and add ages to metadata
-seu.TNBC <- subset(seu.all, subset = subtype == "TNBC")
+# minor to the TNBC donors and add ages to metadata
+seu.TNBC <- minor(seu.all, minor = subtype == "TNBC")
 seu.TNBC@meta.data$Age <- NA
 
 # Two donors have the same age of 52; make slightly different for indexing
@@ -87,19 +87,20 @@ for(donor in unique(seu.TNBC$orig.ident)){
 # Find the maximum number of unique minor cell types for each major cell type
 for(type in unique(seu.TNBC$celltype_major)){
   print(type)
-  type_obj <- subset(seu.TNBC, subset = celltype_major == type)
+  type_obj <- minor(seu.TNBC, minor = celltype_major == type)
   print(length(unique(type_obj$celltype_minor)))
 }
 
-# The maximum is 5; choose 5 high contrast colors for plotting stacked proprtion bar charts
-colors <- c("#9b5de5", "#ff9f1c", "#00bbf9", "#fee440", "#f15bb5")
+# The maximum is 13; choose 5 high contrast colors for plotting stacked proportion bar charts
+colors <- c("#9b5de5", "#ff9f1c", "#00bbf9", "#fee440", "#f15bb5", "#8bc34a", "#f44336", "#072ac8",
+            "#b52dc8", "#dbf679", "#e76f51", "#a0c4ff", "#51696c")
 
 # For each major cell type:
 for(type in unique(seu.TNBC$celltype_major)){
   print(type)
   
-  # Subset the seurat object to just be the majojr cell type
-  type_obj <- subset(seu.TNBC, subset = celltype_major == type)
+  # minor the seurat object to just be the majojr cell type
+  type_obj <- minor(seu.TNBC, minor = celltype_major == type)
   
   # Make a data frame of minor cell types within that major cell type, populate with the unique minor cell types
   # and donors' ages as column names
@@ -163,8 +164,8 @@ for(type in unique(seu.TNBC$celltype_major)){
 # Change working directory for ER+
 setwd("/Users/addie/desktop/Proportions/ER")
 
-# Subset the data to just be the ER+ donors and add donorss ages to Seurat object metadata
-seu.ER <- subset(seu.all, subset = subtype == "ER+")
+# minor the data to just be the ER+ donors and add donorss ages to Seurat object metadata
+seu.ER <- minor(seu.all, minor = subtype == "ER+")
 seu.ER@meta.data$Age <- NA
 for(donor in unique(seu.ER$orig.ident)){
   seu.ER@meta.data$Age[seu.ER@meta.data$orig.ident == donor] <- as.character(age_matrix[rownames(age_matrix) == donor,1])
@@ -177,7 +178,7 @@ print(length(unique(seu.ER$Age)))
 # Same as TNBC, check the maximum number of minor cell types within each major cell type
 for(type in unique(seu.ER$celltype_major)){
   print(type)
-  type_obj <- subset(seu.ER, subset = celltype_major == type)
+  type_obj <- minor(seu.ER, minor = celltype_major == type)
   print(length(unique(type_obj$celltype_minor)))
 }
 
@@ -185,8 +186,8 @@ for(type in unique(seu.ER$celltype_major)){
 for(type in unique(seu.ER$celltype_major)){
   print(type)
   
-  # Subset the ER+ seurat object to be just that majojr cell type
-  type_obj <- subset(seu.ER, subset = celltype_major == type)
+  # minor the ER+ seurat object to be just that majojr cell type
+  type_obj <- minor(seu.ER, minor = celltype_major == type)
   
   # Make a data frame of minor cell types within that major cell type, populate with the unique minor cell types
   # and donors' ages as column names
