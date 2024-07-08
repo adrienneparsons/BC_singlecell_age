@@ -94,7 +94,7 @@ for(type in c("CAFs MSC iCAF-like", "CAFs myCAF-like", "T cells CD8+", "T cells 
                   title = paste0("Signaling pathways for ", type, "--", type2))+ 
                   theme(axis.text.y = element_text(size=8), title = element_text(size=10))
     
-    ggsave(paste0(type, "--", type2, ".pdf"), rn, device = "pdf")
+    #ggsave(paste0(type, "--", type2, ".pdf"), rn, device = "pdf")
     
     # Get the pathways that are represented in the iterated celltype-celltype interaction
     data <- rankNet(cellchatTNBC, measure = "weight", mode = "comparison", stacked = F, sources.use = type, targets.use = type2, do.stat = TRUE, show.raw = FALSE, return.data = TRUE)
@@ -126,6 +126,7 @@ bubble_data_all <- bubble_data_all$communication[bubble_data_all$communication$p
 # Create the row when the probability is 0
 bubble_data_all <- bubble_data_all %>% arrange(interaction_name, desc(group.names))
 bubble_data_all_2 <- fun(bubble_data_all)
+bubble_dataTNBC <- bubble_data_all_2
 
 # Logistic regression
 setwd("/Users/addie/desktop")
@@ -242,7 +243,7 @@ for(type in c("CAFs MSC iCAF-like", "CAFs myCAF-like", "T cells CD8+", "T cells 
                             title = paste0("Signaling pathways for ", type, "--", type2))+ 
       theme(axis.text.y = element_text(size=8), title = element_text(size=10))
     
-    ggsave(paste0(type, "--", type2, ".pdf"), rn, device = "pdf")
+    #ggsave(paste0(type, "--", type2, ".pdf"), rn, device = "pdf")
     
     # Get the pathways that are represented in the iterated celltype-celltype interaction
     data <- rankNet(cellchatER, measure = "weight", mode = "comparison", stacked = F, sources.use = type, targets.use = type2, do.stat = TRUE, show.raw = FALSE, return.data = TRUE)
@@ -274,6 +275,7 @@ bubble_data_all <- bubble_data_all$communication[bubble_data_all$communication$p
 # Create the row when the probability is 0
 bubble_data_all <- bubble_data_all %>% arrange(interaction_name, desc(group.names))
 bubble_data_all_2 <- fun(bubble_data_all)
+bubble_dataER <- bubble_data_all_2
 
 # Logistic regression
 setwd("/Users/addie/desktop")
@@ -443,7 +445,7 @@ nrow(data[data$Probyoung !=0 & data$Probold == 0,])
 nrow(data[data$Probold !=0 & data$Probyoung == 0,])
 
 # Identify which LR pairs need boxes in Figure 5/6 because the difference is >1.2 fold between old and young
-Boxes_ER_unbiased <- bubble_data_all_ER2[bubble_data_all_ER2$pathway_name %in% c("MIF", "LAMININ", "THBS", "FN1"),]
+Boxes_ER_unbiased <- bubble_dataER[bubble_dataER$pathway_name %in% c("MIF", "LAMININ", "THBS", "FN1"),]
 
 # Start index and generate a data frame with the correct column names
 n <- 1
@@ -483,7 +485,7 @@ write.csv(Boxes_ER_unbiased2, file = "20240628_foldchanges_unbiasedERbubble.csv"
 
 # Repeat for TNBC
 # Identify which LR pairs need boxes in Figure 5/6 because the difference is >1.2 fold between old and young
-Boxes_TNBC_unbiased <- bubble_data_all_TNBC2[bubble_data_all_TNBC2$pathway_name %in% c("GALECTIN","CypA","PLAU","FN1","THBS","APP","MHC-I","MPZ","ADGRE"),]
+Boxes_TNBC_unbiased <- bubble_dataTNBC[bubble_dataTNBC$pathway_name %in% c("GALECTIN","CypA","PLAU","FN1","THBS","APP","MHC-I","MPZ","ADGRE"),]
 
 # Start index and generate a data frame with the correct column names
 n <- 1
@@ -520,6 +522,4 @@ while(n < nrow(Boxes_TNBC_unbiased)){
 }
 
 write.csv(Boxes_TNBC_unbiased2, file = "20240628_foldchanges_unbiasedTNBCbubble.csv")
-
-
 
