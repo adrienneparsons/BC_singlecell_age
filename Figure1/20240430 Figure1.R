@@ -161,7 +161,7 @@ df2 <- cbind(TNBC_young2, TNBC_old2)
 # Make that data an ExpressionSet
 aseset <- ExpressionSet(assayData = as.matrix(df2))
 
-# Find the genes with the highest spread of standard deviation exprression
+# Find the genes with the highest spread of standard deviation expression
 var <- apply(exprs(aseset), 1, sd)
 var <- var[order(var)]
 

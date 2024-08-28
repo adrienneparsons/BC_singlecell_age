@@ -131,7 +131,7 @@ bubble_dataTNBC <- bubble_data_all_2
 # Logistic regression
 setwd("/Users/addie/desktop")
 bubble_data_all_3 <- bubble_data_all_2 %>% arrange(interaction_name, desc(group.names), dataset)
-write.xlsx(bubble_data_all_3, "Bubbledata_TNBC.xlsx", sheetName = "Sheet1")
+write.xlsx(bubble_data_all_3, "Bubbledata_TNBC_withseed2.xlsx", sheetName = "Sheet1")
 
 # Generate an empty data frame to populate with logistic regression results
 df <- data.frame(pathway_name = character(0),
@@ -168,7 +168,7 @@ df2 <- rbind(dfyoung,dfold)
 # Format the data for logistic regression, making na values 0
 df3 <- pivot_wider(df2, names_from = pathway_name, values_from = avg_prob)
 df3[is.na(df3)] <- 0
-write.xlsx(df3, "Bubbledata_TNBC_glm.xlsx", sheetName = "Sheet1")
+write.xlsx(df3, "Bubbledata_TNBC_glm_withseed2.xlsx", sheetName = "Sheet1")
 
 # Change annotations to 0 and 1 for logistic regression
 df3$dataset <- factor(df3$dataset, levels=c("Young","Old"), labels = c(0,1))
@@ -177,31 +177,20 @@ df3$dataset <- factor(df3$dataset, levels=c("Young","Old"), labels = c(0,1))
 colnames(df3) <- make.names(colnames(df3))
 
 # Univariate logistic regression model
+set.seed(42)
 res <- lapply(3:73, function(i) summary(glm(as.formula(paste0('dataset ~ ', colnames(df3)[i])), data = df3, family = binomial)))
 res_confint <- lapply(3:73, function(i) confint(glm(as.formula(paste0('dataset ~ ', colnames(df3)[i])), data = df3, family = binomial)))
 
-# Statistically significant signaling pathways (p<0.05)
-sign_res <- lapply(res, function(x) {
-  ifelse(x$coefficients[, "Pr(>|z|)"] < 0.05, TRUE, FALSE)
-})
-
-for (i in seq_along(sign_res)) {
-  if (any(sign_res[[i]])) {
-    cat("Model", i, "significant coefficients:\n")
-    print(sign_res[[i]])
-    print(res[[i]]$coefficients[,"Estimate"][2])
-    cat("\n")
-  }
-}
-
-# Make the final Supplementary table
+# Supplementary table
 suppltable <- data.frame(pathway_name = character(0),
                          estimate = numeric(0),
                          pvalue = numeric(0))
 
 ci95 <- data.frame(pathway_name = character(0),
-                         estimate = numeric(0),
-                         pvalue = numeric(0))
+                   "2.5 %" = numeric(0),
+                   "97.5 %" = numeric(0)
+                   
+)
 for (x in res) {
   suppltable <- as.data.frame(rbind(suppltable,c(rownames(x$coefficients)[2],x$coefficients[2, "Estimate"], x$coefficients[2, "Pr(>|z|)"])))
 }
@@ -220,7 +209,7 @@ table_pathwaysTNBC$pathwaysTNBC <- make.names(table_pathwaysTNBC$pathwaysTNBC)
 suppltable_values_def <- merge(suppltable_values,table_pathwaysTNBC,by.x="pathway_name",by.y="pathwaysTNBC")
 suppltable_values_def$included_fig5 <- ifelse(as.numeric(suppltable_values_def$pvalue) < 0.05 & suppltable_values_def$Freq >= 15, TRUE, FALSE)
 
-write.xlsx(suppltable_values_def,"Bubbledata_TNBC_glm_res.xlsx",sheetName = "Sheet1")
+write.xlsx(suppltable_values_def,"Bubbledata_TNBC_glm_res_withseed2.xlsx",sheetName = "Sheet1")
 
 # Bubble plot of TNBC logistic regression pathways
 sp_from_lr_ranknet <- c("GALECTIN","CypA","PLAU","FN1","THBS","APP","MHC-I","MPZ","ADGRE")
@@ -280,7 +269,7 @@ bubble_dataER <- bubble_data_all_2
 # Logistic regression
 setwd("/Users/addie/desktop")
 bubble_data_all_3 <- bubble_data_all_2 %>% arrange(interaction_name, desc(group.names), dataset)
-write.xlsx(bubble_data_all_3, "Bubbledata_ER.xlsx", sheetName = "Sheet1")
+write.xlsx(bubble_data_all_3, "Bubbledata_ER_withseed2.xlsx", sheetName = "Sheet1")
 
 # Generate an empty data frame to populate with logistic regression results
 df <- data.frame(pathway_name = character(0),
@@ -317,7 +306,7 @@ df2 <- rbind(dfyoung,dfold)
 # Format the data for logistic regression, making na values 0
 df3 <- pivot_wider(df2, names_from = pathway_name, values_from = avg_prob)
 df3[is.na(df3)] <- 0
-write.xlsx(df3, "Bubbledata_ER_glm.xlsx", sheetName = "Sheet1")
+write.xlsx(df3, "Bubbledata_ER_glm_withseed2.xlsx", sheetName = "Sheet1")
 
 # Change annotations to 0 and 1 for logistic regression
 df3$dataset <- factor(df3$dataset, levels=c("Young","Old"), labels = c(0,1))
@@ -326,31 +315,20 @@ df3$dataset <- factor(df3$dataset, levels=c("Young","Old"), labels = c(0,1))
 colnames(df3) <- make.names(colnames(df3))
 
 # Univariate logistic regression model
+set.seed(42)
 res <- lapply(3:86, function(i) summary(glm(as.formula(paste0('dataset ~ ', colnames(df3)[i])), data = df3, family = binomial)))
 res_confint <- lapply(3:86, function(i) confint(glm(as.formula(paste0('dataset ~ ', colnames(df3)[i])), data = df3, family = binomial)))
 
-# Statistically significant signaling pathways (p<0.05)
-sign_res <- lapply(res, function(x) {
-  ifelse(x$coefficients[, "Pr(>|z|)"] < 0.05, TRUE, FALSE)
-})
-
-for (i in seq_along(sign_res)) {
-  if (any(sign_res[[i]])) {
-    cat("Model", i, "significant coefficients:\n")
-    print(sign_res[[i]])
-    print(res[[i]]$coefficients[,"Estimate"][2])
-    cat("\n")
-  }
-}
-
-# Make the final Supplementary table
+# Supplementary table
 suppltable <- data.frame(pathway_name = character(0),
                          estimate = numeric(0),
                          pvalue = numeric(0))
 
 ci95 <- data.frame(pathway_name = character(0),
-                   estimate = numeric(0),
-                   pvalue = numeric(0))
+                   "2.5 %" = numeric(0),
+                   "97.5 %" = numeric(0)
+                   
+)
 for (x in res) {
   suppltable <- as.data.frame(rbind(suppltable,c(rownames(x$coefficients)[2],x$coefficients[2, "Estimate"], x$coefficients[2, "Pr(>|z|)"])))
 }
@@ -369,7 +347,7 @@ table_pathwaysER$pathwaysER <- make.names(table_pathwaysER$pathwaysER)
 suppltable_values_def <- merge(suppltable_values,table_pathwaysER,by.x="pathway_name",by.y="pathwaysER")
 suppltable_values_def$included_fig5 <- ifelse(as.numeric(suppltable_values_def$pvalue) < 0.05 & suppltable_values_def$Freq >= 15, TRUE, FALSE)
 
-write.xlsx(suppltable_values_def,"Bubbledata_ER_glm_res.xlsx",sheetName = "Sheet1")
+write.xlsx(suppltable_values_def,"Bubbledata_ER_glm_res_withseed2.xlsx",sheetName = "Sheet1")
 
 # Bubble plot of ER logistic regression pathways
 sp_from_lr_ranknet <- c("FN1","THBS","MIF","LAMININ")
@@ -450,6 +428,7 @@ Boxes_ER_unbiased <- bubble_dataER[bubble_dataER$pathway_name %in% c("MIF", "LAM
 # Start index and generate a data frame with the correct column names
 n <- 1
 Boxes_ER_unbiased2 <- Boxes_ER_unbiased[1,]
+Boxes_ER_unbiased2$FC <- NA
 Boxes_ER_unbiased2 <- Boxes_ER_unbiased2[-1,]
 
 # While the index is less than the number of rows in the data
@@ -465,7 +444,9 @@ while(n < nrow(Boxes_ER_unbiased)){
   # If one of the groupss has a 0 probability, add the other group to the final data (it gets a box)
   if(0 %in% subset$prob){
     print("0 present")
-    Boxes_ER_unbiased2 <- rbind(Boxes_ER_unbiased2, subset[which(subset$prob !=0),])
+    to_add <- c(subset[which(subset$prob !=0),], "unique")
+    names(to_add) <- c(names(subset[which(subset$prob != 0),]), "FC")
+    Boxes_ER_unbiased2 <- rbind(Boxes_ER_unbiased2, to_add)
   } else({
     # If they are both nonzero, get the fold change difference
     ovsy <- foldchange(subset$prob[old], subset$prob[young])
@@ -473,7 +454,9 @@ while(n < nrow(Boxes_ER_unbiased)){
     # If the fold change difference is >1.2 or <-1.2 add that data to the final data (one row gets a box)
     if(abs(ovsy) > 1.2){
       print(ovsy)
-      Boxes_ER_unbiased2 <- rbind(Boxes_ER_unbiased2, subset[which(subset$prob == max(subset$prob)),])
+      to_add <- c(subset[which(subset$prob == max(subset$prob)),], ovsy)
+      names(to_add) <- c(names(subset[which(subset$prob == max(subset$prob)),]), "FC")
+      Boxes_ER_unbiased2 <- rbind(Boxes_ER_unbiased2, to_add)
     } else(Boxes_ER_unbiased2 <- Boxes_ER_unbiased2)
   })
   
@@ -481,7 +464,11 @@ while(n < nrow(Boxes_ER_unbiased)){
   n <- n+2
 }
 
-write.csv(Boxes_ER_unbiased2, file = "20240628_foldchanges_unbiasedERbubble.csv")
+write.csv(Boxes_ER_unbiased2, file = "20240808_foldchanges_unbiasedERbubble.csv")
+
+# Figure out te balance of young to old boxes in ER+ bubble data
+nrow(Boxes_ER_unbiased2[Boxes_ER_unbiased2$dataset == "ER.old",])
+nrow(Boxes_ER_unbiased2[Boxes_ER_unbiased2$dataset == "ER.young",])
 
 # Repeat for TNBC
 # Identify which LR pairs need boxes in Figure 5/6 because the difference is >1.2 fold between old and young
@@ -490,6 +477,7 @@ Boxes_TNBC_unbiased <- bubble_dataTNBC[bubble_dataTNBC$pathway_name %in% c("GALE
 # Start index and generate a data frame with the correct column names
 n <- 1
 Boxes_TNBC_unbiased2 <- Boxes_TNBC_unbiased[1,]
+Boxes_TNBC_unbiased2$FC <- NA
 Boxes_TNBC_unbiased2 <- Boxes_TNBC_unbiased2[-1,]
 
 # While the index is less than the number of rows in the data
@@ -505,7 +493,9 @@ while(n < nrow(Boxes_TNBC_unbiased)){
   # If one of the groupss has a 0 probability, add the other group to the final data (it gets a box)
   if(0 %in% subset$prob){
     print("0 present")
-    Boxes_TNBC_unbiased2 <- rbind(Boxes_TNBC_unbiased2, subset[which(subset$prob !=0),])
+    to_add <- c(subset[which(subset$prob !=0),], "unique")
+    names(to_add) <- c(names(subset[which(subset$prob != 0),]), "FC")
+    Boxes_TNBC_unbiased2 <- rbind(Boxes_TNBC_unbiased2, to_add)
   } else({
     # If they are both nonzero, get the fold change difference
     ovsy <- foldchange(subset$prob[old], subset$prob[young])
@@ -513,7 +503,9 @@ while(n < nrow(Boxes_TNBC_unbiased)){
     # If the fold change difference is >1.2 or <-1.2 add that data to the final data (one row gets a box)
     if(abs(ovsy) > 1.2){
       print(ovsy)
-      Boxes_TNBC_unbiased2 <- rbind(Boxes_TNBC_unbiased2, subset[which(subset$prob == max(subset$prob)),])
+      to_add <- c(subset[which(subset$prob == max(subset$prob)),], ovsy)
+      names(to_add) <- c(names(subset[which(subset$prob == max(subset$prob)),]), "FC")
+      Boxes_TNBC_unbiased2 <- rbind(Boxes_TNBC_unbiased2, to_add)
     } else(Boxes_TNBC_unbiased2 <- Boxes_TNBC_unbiased2)
   })
   
@@ -521,5 +513,8 @@ while(n < nrow(Boxes_TNBC_unbiased)){
   n <- n+2
 }
 
-write.csv(Boxes_TNBC_unbiased2, file = "20240628_foldchanges_unbiasedTNBCbubble.csv")
+nrow(Boxes_TNBC_unbiased2[Boxes_TNBC_unbiased2$dataset == "TNBC.old",])
+nrow(Boxes_TNBC_unbiased2[Boxes_TNBC_unbiased2$dataset == "TNBC.young",])
+
+write.csv(Boxes_TNBC_unbiased2, file = "20240808_foldchanges_unbiasedTNBCbubble.csv")
 

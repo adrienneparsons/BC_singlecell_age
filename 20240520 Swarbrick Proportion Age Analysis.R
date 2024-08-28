@@ -70,10 +70,10 @@ colnames(age_matrix) <- "age"
 
 # TNBC Proportion analysis
 # New Working Directory
-setwd("/Users/addie/desktop/Proportions/TNBC")
+setwd("/Users/addie/desktop/proportions 2/TNBC")
 
 # minor to the TNBC donors and add ages to metadata
-seu.TNBC <- minor(seu.all, minor = subtype == "TNBC")
+seu.TNBC <- subset(seu.all, subset = subtype == "TNBC")
 seu.TNBC@meta.data$Age <- NA
 
 # Two donors have the same age of 52; make slightly different for indexing
@@ -87,7 +87,7 @@ for(donor in unique(seu.TNBC$orig.ident)){
 # Find the maximum number of unique minor cell types for each major cell type
 for(type in unique(seu.TNBC$celltype_major)){
   print(type)
-  type_obj <- minor(seu.TNBC, minor = celltype_major == type)
+  type_obj <- subset(seu.TNBC, subset = celltype_major == type)
   print(length(unique(type_obj$celltype_minor)))
 }
 
@@ -100,7 +100,7 @@ for(type in unique(seu.TNBC$celltype_major)){
   print(type)
   
   # minor the seurat object to just be the majojr cell type
-  type_obj <- minor(seu.TNBC, minor = celltype_major == type)
+  type_obj <- subset(seu.TNBC, subset = celltype_major == type)
   
   # Make a data frame of minor cell types within that major cell type, populate with the unique minor cell types
   # and donors' ages as column names
@@ -112,7 +112,7 @@ for(type in unique(seu.TNBC$celltype_major)){
   for(celltype in minors_df$celltype){
     for(age in colnames(minors_df[,2:length(minors_df)])){
       # calculate the proportion of cells of that minor cell type as a proportion of the major cell type for a given donor
-      n <- nrow(type_obj@meta.data[type_obj@meta.data$Age == age & type_obj@meta.data$celltype_minor == celltype,])/nrow(type_obj@meta.data[type_obj@meta.data$Age == age,])
+      n <- nrow(type_obj@meta.data[type_obj@meta.data$Age == age & type_obj@meta.data$celltype_minor == celltype,])
       
       # Add that proportion to the dataframe for the correct cell type/age combo
       minors_df[minors_df$celltype == celltype, age] <- n
@@ -132,10 +132,18 @@ for(type in unique(seu.TNBC$celltype_major)){
       
       # Save
       ggsave(paste0(type, "_barchart.pdf"), p_minors, device = "pdf", height = 3, width = 4)
+      
+      for_sp <- p_minors$data
+      for_sp$prop <- NA
+      
+      for(age in unique(for_sp$name)){
+        total_freq <- sum(for_sp$value[for_sp$name == age])
+        for_sp$prop[for_sp$name == age] <- for_sp$value[for_sp$name == age] / total_freq
+      }
     
       # For each minor cell type make a scatter plot of proportion to age
-      for(types in unique(minors_df_long$celltype)){
-        p <- ggplot(minors_df_long[minors_df_long$celltype == types,], aes(x = as.numeric(name), y = as.numeric(value)))+
+      for(types in unique(for_sp$celltype)){
+        p <- ggplot(for_sp[for_sp$celltype == types,], aes(x = as.numeric(name), y = as.numeric(prop)))+
           geom_point()+
           theme(aspect.ratio = 1)+
           geom_smooth(method = "lm", se = T)+
@@ -144,8 +152,8 @@ for(type in unique(seu.TNBC$celltype_major)){
           ylab("Proportion")
         
         # Print the correlation test
-        data <- minors_df_long[minors_df_long$celltype == types,]
-        tryCatch({cor <- cor.test(as.numeric(data$name), y = as.numeric(data$value))
+        data <- for_sp[for_sp$celltype == types,]
+        tryCatch({cor <- cor.test(as.numeric(data$name), y = as.numeric(data$prop))
           print(types)
           print(cor)
         },
@@ -162,10 +170,10 @@ for(type in unique(seu.TNBC$celltype_major)){
     
 
 # Change working directory for ER+
-setwd("/Users/addie/desktop/Proportions/ER")
+setwd("/Users/addie/desktop/proportions 2/ER")
 
 # minor the data to just be the ER+ donors and add donorss ages to Seurat object metadata
-seu.ER <- minor(seu.all, minor = subtype == "ER+")
+seu.ER <- subset(seu.all, subset = subtype == "ER+")
 seu.ER@meta.data$Age <- NA
 for(donor in unique(seu.ER$orig.ident)){
   seu.ER@meta.data$Age[seu.ER@meta.data$orig.ident == donor] <- as.character(age_matrix[rownames(age_matrix) == donor,1])
@@ -178,7 +186,7 @@ print(length(unique(seu.ER$Age)))
 # Same as TNBC, check the maximum number of minor cell types within each major cell type
 for(type in unique(seu.ER$celltype_major)){
   print(type)
-  type_obj <- minor(seu.ER, minor = celltype_major == type)
+  type_obj <- subset(seu.ER, subset = celltype_major == type)
   print(length(unique(type_obj$celltype_minor)))
 }
 
@@ -186,8 +194,8 @@ for(type in unique(seu.ER$celltype_major)){
 for(type in unique(seu.ER$celltype_major)){
   print(type)
   
-  # minor the ER+ seurat object to be just that majojr cell type
-  type_obj <- minor(seu.ER, minor = celltype_major == type)
+  # minor the seurat object to just be the majojr cell type
+  type_obj <- subset(seu.ER, subset = celltype_major == type)
   
   # Make a data frame of minor cell types within that major cell type, populate with the unique minor cell types
   # and donors' ages as column names
@@ -199,7 +207,7 @@ for(type in unique(seu.ER$celltype_major)){
   for(celltype in minors_df$celltype){
     for(age in colnames(minors_df[,2:length(minors_df)])){
       # calculate the proportion of cells of that minor cell type as a proportion of the major cell type for a given donor
-      n <- nrow(type_obj@meta.data[type_obj@meta.data$Age == age & type_obj@meta.data$celltype_minor == celltype,])/nrow(type_obj@meta.data[type_obj@meta.data$Age == age,])
+      n <- nrow(type_obj@meta.data[type_obj@meta.data$Age == age & type_obj@meta.data$celltype_minor == celltype,])
       
       # Add that proportion to the dataframe for the correct cell type/age combo
       minors_df[minors_df$celltype == celltype, age] <- n
@@ -220,9 +228,17 @@ for(type in unique(seu.ER$celltype_major)){
   # Save
   ggsave(paste0(type, "_barchart.pdf"), p_minors, device = "pdf", height = 3, width = 4)
   
+  for_sp <- p_minors$data
+  for_sp$prop <- NA
+  
+  for(age in unique(for_sp$name)){
+    total_freq <- sum(for_sp$value[for_sp$name == age])
+    for_sp$prop[for_sp$name == age] <- for_sp$value[for_sp$name == age] / total_freq
+  }
+  
   # For each minor cell type make a scatter plot of proportion to age
-  for(types in unique(minors_df_long$celltype)){
-    p <- ggplot(minors_df_long[minors_df_long$celltype == types,], aes(x = as.numeric(name), y = as.numeric(value)))+
+  for(types in unique(for_sp$celltype)){
+    p <- ggplot(for_sp[for_sp$celltype == types,], aes(x = as.numeric(name), y = as.numeric(prop)))+
       geom_point()+
       theme(aspect.ratio = 1)+
       geom_smooth(method = "lm", se = T)+
@@ -231,8 +247,8 @@ for(type in unique(seu.ER$celltype_major)){
       ylab("Proportion")
     
     # Print the correlation test
-    data <- minors_df_long[minors_df_long$celltype == types,]
-    tryCatch({cor <- cor.test(as.numeric(data$name), y = as.numeric(data$value))
+    data <- for_sp[for_sp$celltype == types,]
+    tryCatch({cor <- cor.test(as.numeric(data$name), y = as.numeric(data$prop))
     print(types)
     print(cor)
     },
@@ -246,4 +262,5 @@ for(type in unique(seu.ER$celltype_major)){
   
   
 }
+
 
