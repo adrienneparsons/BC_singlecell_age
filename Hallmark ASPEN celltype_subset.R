@@ -1,4 +1,6 @@
-
+# Figure S5: ASPEN on Hallmark pathways by celltype_subset
+###########################################################
+# Adrienne Parsons, 2024-09-10
 
 # Prerequisites -----------------------------------------------------------------------------------
 library(tidyverse)
@@ -72,32 +74,8 @@ colnames(age_matrix) <- "age"
 
 # GSEA analysis
 
-# GSEA analysis
-# Set the working directory and import the GSEA file for analysis
-setwd("/Users/addie/Desktop/GSEA/gmts")
-GO_fileC2 <- "c2.all.v2023.2.Hs.symbols.gmt"
-GO_fileC5 <- "c5.all.v2023.2.Hs.symbols.gmt"
-senescence_genesets <- c("REACTOME_SENESCENCE_ASSOCIATED_SECRETORY_PHENOTYPE_SASP",
-                         "GOBP_CELLULAR_SENESCENCE",
-                         "CHICAS_RB1_TARGETS_SENESCENT",
-                         "FRIDMAN_SENESCENCE_UP",
-                         "FRIDMAN_SENESCENCE_DN",
-                         "KAMMINGA_SENESCENCE",
-                         "REACTOME_CELLULAR_SENESCENCE",
-                         "REACTOME_DNA_DAMAGE_TELOMERE_STRESS_INDUCED_SENESCENCE",
-                         "REACTOME_ONCOGENE_INDUCED_SENESCENCE",
-                         "TANG_SENESCENCE_TP53_TARGETS_DN",
-                         "TANG_SENESCENCE_TP53_TARGEETS_UP",
-                         "WP_GLYCOLYSIS_IN_SENESCENCE",
-                         "WP_NAD_METABOLISM_IN_ONCOGENE_INDUCED_SENESCENCE_AND_MITOCHONDRIAL_DYSFUNCTIONASSOCIATED_SENESCENCE",
-                         "WP_PROSTAGLANDIN_AND_LEUKOTRIENE_METABOLISM_IN_SENESCENCE",
-                         "WP_TCA_CYCLE_IN_SENESCENCE",
-                         "GOBP_NEGATIVE_REGULATION_OF_CELLULAR_SENESCENCE",
-                         "GOBP_STRESS_INDUCED_PREMATURE_SENESCENCE"
-                         )
-
 # GSEA function
-GSEA <- function(gene_list, pval) {
+GSEA <- function(gene_list, GO_file, pval) {
   set.seed(54321)
   library(dplyr)
   library(gage)
@@ -111,16 +89,8 @@ GSEA <- function(gene_list, pval) {
     warning("Gene list not sorted")
     gene_list = sort(gene_list, decreasing = TRUE)
   }
-  
-  # Get the gene set info for C2 and C5 then subset down to the specific senescence-related ones
-  myGOa = fgsea::gmtPathways(GO_fileC2)
-  myGOb = fgsea::gmtPathways(GO_fileC5)
-  myGO <- c(myGOa, myGOb)
-  myGO <- myGO[names(myGO) %in% senescence_genesets]
-  
+  myGO = fgsea::gmtPathways(GO_file)
   print("running fgsea")
-  
-  # Run fgsea
   fgRes <- fgsea::fgsea(pathways = myGO, 
                         stats = gene_list,
                         minSize=15,
@@ -158,7 +128,7 @@ GSEA <- function(gene_list, pval) {
       filtRes = rbind(head(fgRes, n = 10),
                       tail(fgRes, n = 10 ))
       
-      # Optional plotting
+      
       upcols =  colorRampPalette(colors = c("red4", "red1", "lightpink"))( sum(filtRes$Enrichment == "Up-regulated"))
       downcols =  colorRampPalette(colors = c( "lightblue", "blue1", "blue4"))( sum(filtRes$Enrichment == "Down-regulated"))
       colos = c(upcols, downcols)
@@ -177,25 +147,12 @@ GSEA <- function(gene_list, pval) {
       output = list("Results" = fgRes, "Plot" = g)
       return(output)
     }else{
-      
-      # If there are no significant pathways, generate a dataframe of 0s with the right dimensions of
-      # pathways x results
-      myGOa = fgsea::gmtPathways(GO_fileC2)
-      myGOb = fgsea::gmtPathways(GO_fileC5)
-      myGO <- c(myGOa, myGOb)
-      myGO <- myGO[names(myGO) %in% senescence_genesets]
       resultsnone <- data.frame(matrix(0, nrow = length(myGO), ncol = 6))
       rownames(resultsnone) <- names(myGO)
       resultsnone[,1] <- names(myGO)
       return(list("Results"= resultsnone))
     }
   }else{
-    # If there are no significant pathways, generate a dataframe of 0s with the right dimensions of
-    # pathways x results
-    myGOa = fgsea::gmtPathways(GO_fileC2)
-    myGOb = fgsea::gmtPathways(GO_fileC5)
-    myGO <- c(myGOa, myGOb)
-    myGO <- myGO[names(myGO) %in% senescence_genesets]
     resultsnone <- data.frame(matrix(0, nrow = length(myGO), ncol = 6))
     rownames(resultsnone) <- names(myGO)
     resultsnone[,1] <- names(myGO)
@@ -205,15 +162,11 @@ GSEA <- function(gene_list, pval) {
 
 ########################################################################################
 # Get the Hallmark gene sets from the msigdbr package
-gene_setsC2 = msigdbr(species = "human", category = "C2")
-gene_setsC5 = msigdbr(species = "human", category = "C5")
-gene_sets <- rbind(gene_setsC2, gene_setsC5)
+h_gene_sets = msigdbr(species = "human", category = "H")
 
 # make a smaller dataframe of the data we need that will be subsetted out 
-gene_set_names <- unique(gene_sets$gs_name)
-gene_set_df <- data.frame(gene_sets$gs_name, gene_sets$human_gene_symbol)
-gene_set_names <- gene_set_names[gene_set_names %in% senescence_genesets]
-gene_set_df <- gene_set_df[gene_set_df$gene_sets.gs_name %in% senescence_genesets,]
+hallmark_gene_set_names <- unique(h_gene_sets$gs_name)
+gene_set_df <- data.frame(h_gene_sets$gs_name, h_gene_sets$human_gene_symbol)
 
 # Function for signature scoring
 signature_scoring <- function(gene_set_names, obj, gsea_data, subtype_str){
@@ -227,9 +180,9 @@ signature_scoring <- function(gene_set_names, obj, gsea_data, subtype_str){
   
   for( i in gene_set_names){
     print(i)
-    gene_list <- list(subset(gene_set_df$gene_sets.human_gene_symbol, gene_set_df$gene_sets.gs_name == i))
+    gene_list <- list(subset(gene_set_df$h_gene_sets.human_gene_symbol, gene_set_df$h_gene_sets.gs_name == i))
     hallmark_MS <- AddModuleScore(obj, features = gene_list)
-    celltype.ls <- unique(obj@meta.data$celltype_minor)
+    celltype.ls <- unique(obj@meta.data$celltype_subset)
     final_data <- as.data.frame(matrix(NA, nrow = length(celltype.ls), ncol = length(donors)))
     colnames(final_data) <- donors
     rownames(final_data) <- celltype.ls
@@ -241,10 +194,10 @@ signature_scoring <- function(gene_set_names, obj, gsea_data, subtype_str){
     
     for(j in 1:length(donors)){
       cell_score_df <- data.frame(matrix(NA, nrow = length(celltype.ls), ncol = 1))
-      rownames(cell_score_df) <- unique(obj$celltype_minor)
+      rownames(cell_score_df) <- unique(obj$celltype_subset)
       each_donor <- subset(hallmark_MS@meta.data, hallmark_MS@meta.data$orig.ident == donors[j])
       all_score_df <- data.frame(matrix(NA, nrow = nrow(each_donor), ncol = 2))
-      all_score_df[,1] <- each_donor$celltype_minor
+      all_score_df[,1] <- each_donor$celltype_subset
       all_score_df[,2] <- each_donor$Cluster1
       
       # Given a data frame of module scores for all cells for one donor
@@ -276,14 +229,14 @@ signature_scoring <- function(gene_set_names, obj, gsea_data, subtype_str){
   # create a new data frame to populate with the correlation values for each
   # pathway and cell type
   
-  correlation_df <- as.data.frame(matrix(data = NA, nrow = length(gene_set_names), ncol = length(celltype.ls)))
+  correlation_df <- as.data.frame(matrix(data = NA, nrow = length(hallmark_gene_set_names), ncol = length(celltype.ls)))
   rownames(correlation_df) <-gene_set_names
   colnames(correlation_df) <- celltype.ls
   
   
   # Create another data frame that is the p-values for each correlation 
   # each pathway and cell type)
-  p_val_df <- as.data.frame(matrix(data = NA, nrow = length(gene_set_names), ncol = length(celltype.ls)))
+  p_val_df <- as.data.frame(matrix(data = NA, nrow = length(hallmark_gene_set_names), ncol = length(celltype.ls)))
   rownames(p_val_df) <- gene_set_names
   colnames(p_val_df) <- celltype.ls
   
@@ -312,7 +265,7 @@ signature_scoring <- function(gene_set_names, obj, gsea_data, subtype_str){
     }
   }
   
-  # Get the p-values for the signature scoring correlation
+  
   adj_pval_df <- as.data.frame(matrix(data = NA, nrow = length(gene_set_names), ncol = length(celltype.ls)))
   rownames(adj_pval_df) <- gene_set_names
   colnames(adj_pval_df) <- celltype.ls
@@ -341,7 +294,6 @@ signature_scoring <- function(gene_set_names, obj, gsea_data, subtype_str){
   data_master$Pathway <- sub("HALLMARK_", "", data_master$Pathway)
   data_master$Pathway <- gsub("_", " ", data_master$Pathway)
   
-  # Change NAs to 0 and then return NA values to cell types that have no enrichment score (not enough cells per donor)
   data_master[is.na(data_master)] <- 0
   data_master$Celltype <- as.character(data_master$Celltype)
   
@@ -369,7 +321,7 @@ subset_masterdata <- function(subtype_str){
   obj <- subset(x = seu.all, subset = subtype == subtype_str)
   obj <- NormalizeData(obj)
   donors <- unique(seu.all@meta.data$orig.ident[seu.all@meta.data$subtype == subtype_str])
-  cell_type <- unique(obj@meta.data$celltype_minor)
+  cell_type <- unique(obj@meta.data$celltype_subset)
   
   
   
@@ -394,7 +346,7 @@ subset_masterdata <- function(subtype_str){
     for (n in unique(obj$orig.ident)) {
       print(n)
       tryCatch({
-        expr.ls[[n]] <- GetAssayData(subset(obj, orig.ident == n & celltype_minor == cell_type[i]
+        expr.ls[[n]] <- GetAssayData(subset(obj, orig.ident == n & celltype_subset == cell_type[i]
         ), slot = "data")
       },
       # Not all cell types are present in each donor; this accounts for that
@@ -456,8 +408,8 @@ subset_masterdata <- function(subtype_str){
   } 
   
   # Set the working directory and import the GSEA file for analysis
-  #setwd("/Users/addie/Desktop/GSEA")
-  #GO_file <- "h.all.v7.4.symbols.gmt"
+  setwd("/Users/addie/Desktop/GSEA/")
+  GO_file <- "h.all.v7.4.symbols.gmt"
   
   # Run GSEA
   results_df=data.frame(Cell="trash", Pathway="trash", NES="trash", padj = "trash")
@@ -467,25 +419,22 @@ subset_masterdata <- function(subtype_str){
       print(cell_type[j])
       
       tryCatch({
-        temp2 <- GSEA(get(paste0(cell_type[j], subtype_str)), pval=0.05)
+        temp2 <- GSEA(get(paste0(cell_type[j], subtype_str)), GO_file, pval=0.05)
       }, error = function(e){
         print("no significant pathways")
         temp2 <- list("Results" = NA, "Plot" = NA)
       })
       
       if(class(temp2$Results)=="data.frame"){
-        x=data.frame(cbind(cell_type[j], temp2$Results[,1], temp2$Results[,6], temp2$Results[,3]))
+        x=cbind(cell_type[j], temp2$Results[,1], temp2$Results[,6], temp2$Results[,3])
         colnames(x)=c("Cell", "Pathway", "NES", "padj")
         results_df=rbind(results_df, x)} else{
-          myGOa = fgsea::gmtPathways(GO_fileC2)
-          myGOb = fgsea::gmtPathways(GO_fileC5)
-          myGO <- c(myGOa, myGOb)
-          myGO <- myGO[names(myGO) %in% senescence_genesets]
+          myGO = fgsea::gmtPathways(GO_file)
           resultsnone <- data.frame(matrix(0, nrow = length(myGO), ncol = 4))
           resultsnone[,2] <- names(myGO)
-          resultsnone[,1] <- rep(cell_type[j], length(myGO))
-          resultsnone[,3] <- rep(0, length(myGO))
-          resultsnone[,4] <- rep("NS", length(myGO))
+          resultsnone[,1] <- rep(cell_type[j], 50)
+          resultsnone[,3] <- rep(0, 50)
+          resultsnone[,4] <- rep("NS", 50)
           colnames(resultsnone) <- c("Cell", "Pathway", "NES", "padj")
           results_df=rbind(results_df, resultsnone)
         }
@@ -493,20 +442,16 @@ subset_masterdata <- function(subtype_str){
       
     } else{
       print("no vector found")
-      myGOa = fgsea::gmtPathways(GO_fileC2)
-      myGOb = fgsea::gmtPathways(GO_fileC5)
-      myGO <- c(myGOa, myGOb)
-      myGO <- myGO[names(myGO) %in% senescence_genesets]
-      resultsnone <- data.frame(matrix(0, nrow = length(myGO), ncol = 4))
+      myGO = fgsea::gmtPathways(GO_file)
+      resultsnone <- data.frame(matrix(NA, nrow = length(myGO), ncol = 4))
       resultsnone[,2] <- names(myGO)
-      resultsnone[,1] <- rep(cell_type[j], length(myGO))
-      resultsnone[,3] <- rep(0, length(myGO))
-      resultsnone[,4] <- rep("NS", length(myGO))
+      resultsnone[,1] <- rep(cell_type[j], 50)
+      resultsnone[3] <- rep(NA, 50)
+      resultsnone[4] <- rep(NA, 50)
       colnames(resultsnone) <- c("Cell", "Pathway", "NES", "padj")
       results_df=rbind(results_df, resultsnone)}
     
   }
-  
   
   
   # Prep for bubble plot
@@ -545,7 +490,7 @@ subset_masterdata <- function(subtype_str){
   data_wide4=data_wide3[,order(-data_wide3[nrow(data_wide3),])]
   
   
-  data_master <- signature_scoring(gene_set_names, obj, data_wide4, subtype_str)
+  data_master <- signature_scoring(hallmark_gene_set_names, obj, data_wide4, subtype_str)
   
   for(type in cell_type){
     rm(list = paste0(type, subtype_str))
@@ -557,7 +502,7 @@ subset_masterdata <- function(subtype_str){
 data_master_TNBC <- subset_masterdata("TNBC")
 data_master_ER <- subset_masterdata("ER+")
 
-for(type in unique(seu.all$celltype_minor)){
+for(type in unique(seu.all$celltype_subset)){
   rm(list = paste0(type, "ER+"))
   rm(list = paste0(type, "TNBC"))
 }
@@ -589,8 +534,117 @@ for(pathway in unique(data_master_ER$Pathway)){
   }
 }
 
+data_master_TNBC3 <- data_master_TNBC[,c("Pathway", "Celltype", "Cor", "Enrich_Score")]
+data_master_TNBC3$Padj <- "> 0.05"
+TNBC_pvals$name <- gsub("HALLMARK_", "", TNBC_pvals$name)
+TNBC_pvals$name <- gsub("_", " ", TNBC_pvals$name)
+TNBC_pvals$Cell <- gsub("_", " ", TNBC_pvals$Cell)
+for(i in 1:nrow(TNBC_pvals)){
+  data_master_TNBC3$Padj[data_master_TNBC3$Pathway == TNBC_pvals$name[i] & 
+                           data_master_TNBC3$Celltype == TNBC_pvals$Cell[i]] <- TNBC_pvals$value[i]
+}
+
+data_master_ER3 <- data_master_ER[,c("Pathway", "Celltype", "Cor", "Enrich_Score")]
+data_master_ER3$Padj <- "> 0.05"
+`ER+_pvals`$name <- gsub("HALLMARK_", "", `ER+_pvals`$name)
+`ER+_pvals`$name <- gsub("_", " ", `ER+_pvals`$name)
+`ER+_pvals`$Cell <- gsub("_", " ", `ER+_pvals`$Cell)
+for(i in 1:nrow(`ER+_pvals`)){
+  data_master_ER3$Padj[data_master_ER3$Pathway == `ER+_pvals`$name[i] & 
+                         data_master_ER3$Celltype == `ER+_pvals`$Cell[i] &
+                         data_master_ER3$Enrich_Score == `ER+_pvals`$NES[i]] <- `ER+_pvals`$value[i]
+}
+
+setwd("/Users/addie/desktop")
+write.csv(data_master_TNBC3, file = "TNBC_ASPENResults.csv", row.names = F, quote = F)
+write.csv(data_master_ER3, file = "ER_ASPENResults.csv", row.names = F, quote = F)
+
 # Bubble plotting function
-bubble_plotting <- function(data, subtype_str){
+bubble_plotting <- function(data, subtype_str, max){
+  
+  # Define groupings of Hallmark Pathways (all 50)
+  Miscellaneous <- c("XENOBIOTIC METABOLISM", "WNT BETA CATENIN SIGNALING", "SPERMATOGENESIS",
+                     "PANCREAS BETA CELLS", "NOTCH SIGNALING", "MYOGENESIS",
+                     "HEME METABOLISM", "HEDGEHOG SIGNALING", 
+                     "COAGULATION", "CHOLESTEROL HOMEOSTASIS", "BILE ACID METABOLISM",
+                     "ANGIOGENESIS")
+  Cell_stress <- c("UV RESPONSE UP", "UV RESPONSE DN", "UNFOLDED PROTEIN RESPONSE",
+                   "REACTIVE OXYGEN SPECIES PATHWAY", "P53 PATHWAY", "HYPOXIA", "G2M CHECKPOINT", "E2F TARGETS",
+                   "DNA REPAIR", "APOPTOSIS")
+  Inflammation <- c("TNFA SIGNALING VIA NFKB", "INTERFERON GAMMA RESPONSE", "INTERFERON ALPHA RESPONSE",
+                    "IL6 JAK STAT3 SIGNALING", "IL2 STAT5 SIGNALING",
+                    "INFLAMMATORY RESPONSE", "COMPLEMENT", "ALLOGRAFT REJECTION")
+  Cell_cycle_metabolism <- c("PROTEIN SECRETION", "PEROXISOME", 
+                             "OXIDATIVE PHOSPHORYLATION", "MTORC1 SIGNALING",
+                             "GLYCOLYSIS", "FATTY ACID METABOLISM", "ADIPOGENESIS")
+  Cancer <- c("TGF BETA SIGNALING", "PI3K AKT MTOR SIGNALING", "MYC TARGETS V2", "MYC TARGETS V1", "MITOTIC SPINDLE",
+              "KRAS SIGNALING UP", "KRAS SIGNALING DN", 
+              "ESTROGEN RESPONSE EARLY", "ESTROGEN RESPONSE LATE", "EPITHELIAL MESENCHYMAL TRANSITION",
+              "APICAL SURFACE", "APICAL JUNCTION", "ANDROGEN RESPONSE")
+  
+  # Subset the Hallmark Pathways to just be those represented in the complete cases
+  Miscellaneous <- Miscellaneous[Miscellaneous %in% unique(c(data_master_TNBC2$Pathway, data_master_ER2$Pathway))]
+  Cell_stress <- Cell_stress[Cell_stress %in% unique(c(data_master_TNBC2$Pathway, data_master_ER2$Pathway))]
+  Cell_cycle_metabolism <- Cell_cycle_metabolism[Cell_cycle_metabolism %in% unique(c(data_master_TNBC2$Pathway, data_master_ER2$Pathway))]
+  Inflammation <- Inflammation[Inflammation %in% unique(c(data_master_TNBC2$Pathway, data_master_ER2$Pathway))]
+  Cancer <- Cancer[Cancer %in% unique(c(data_master_TNBC2$Pathway, data_master_ER2$Pathway))]
+  
+  # Make a character string of the list names for looping
+  hallmark_list <- list(Miscellaneous, Cell_stress, Inflammation, Cell_cycle_metabolism, Cancer)
+  names(hallmark_list) <- c("Miscellaneous", "Cell_stress", "Inflammation", "Cell_cycle_metabolism", "Cancer")
+  
+  # Subset the data for pathways within each grouping of pathways
+  for(ls in 1:length(hallmark_list)){
+    pathway_df <- data[data$Pathway %in% hallmark_list[[ls]],]
+    
+    # Plot everything!
+    p <- ggplot(pathway_df, mapping = aes(x = Celltype,
+                                          y= Pathway, size=abs)) +
+      geom_point(alpha = 1, aes(fill = Enrich_Score), pch = 21
+      ) +  scale_fill_gradientn(colours = c("blue","white","red"), limits = c(max*-1, max))+
+      labs(
+        size = "Magnitude GSEA Cor.",
+        fill = "GSEA NES",
+        x = "",
+        y = "") +
+      
+      guides(colour = guide_legend(order = 1),
+             size = guide_legend(order = 2)) +
+      scale_shape_identity() +
+      theme(axis.text.x = element_text(size = 6, angle = 90, hjust=1, vjust = 1)) +
+      theme(axis.text.y = element_text(size = 8))+
+      theme(legend.position = "right")+
+      theme(legend.key.size = unit(0.3, 'cm'))+
+      scale_size(range = c(0, 2))
+    
+    assign(paste0(names(hallmark_list[ls])), p)}
+  
+  library(ggpubr)
+  
+  q <- ggarrange(`Cancer` + 
+                   theme(axis.text.x = element_blank(),
+                         axis.ticks.x = element_blank(),
+                         axis.title.x = element_blank() ),
+                 `Inflammation` + 
+                   theme(axis.text.x = element_blank(),
+                         axis.ticks.x = element_blank(),
+                         axis.title.x = element_blank() ),
+                 `Cell_stress` + 
+                   theme(axis.text.x = element_blank(),
+                         axis.ticks.x = element_blank(),
+                         axis.title.x = element_blank() ),
+                 `Cell_cycle_metabolism` + 
+                   theme(axis.text.x = element_blank(),
+                         axis.ticks.x = element_blank(),
+                         axis.title.x = element_blank() ), 
+                 `Miscellaneous`, ncol = 1, common.legend = T, align = "v", heights = 
+                   c(length(hallmark_list[["Cancer"]]), length(hallmark_list[["Inflammation"]]),
+                     length(hallmark_list[["Cell_stress"]]), length(hallmark_list[["Cell_cycle_metabolism"]]),
+                     length(hallmark_list[["Miscellaneous"]]) + 8
+                   ), font.label = list(size = 8) 
+  ) 
+  ggsave(paste0(subtype_str, "_20230328_final.pdf"), q, device = "pdf",
+         height = 7, width = 5, units = "in")
   
   # Make the supplemental bubble plot with all 50 pathays
   data$Celltype <- gsub("CAFs MSC ", "", data$Celltype)
@@ -613,14 +667,10 @@ bubble_plotting <- function(data, subtype_str){
                                                   "PVL Immature", "Cycling PVL", "NK", "NKT", "T CD4+", "T CD8+",
                                                   "Cycling T"))
   
-  pathway_df <- data
-  
-  aspect_ratio <- (((length(unique(pathway_df$Pathway))) / 2.5))/ (ncol(pathway_df)+1.5)
-  # Plot everything!
-  p <- ggplot(pathway_df, mapping = aes(x = Celltype,
-                                        y= Pathway, size=abs)) +
+  r <- ggplot(data, mapping = aes(x = Celltype,
+                                  y= Pathway, size=abs)) +
     geom_point(alpha = 1, aes(fill = Enrich_Score), pch = 21
-    ) +  scale_fill_gradientn(colours = c("blue","white","red"), limits = c(maxboth*-1, maxboth))+
+    ) +  scale_fill_gradientn(colours = c("blue","white","red"), limits = c(max*-1, max))+
     labs(
       size = "Magnitude GSEA Cor.",
       fill = "GSEA NES",
@@ -630,19 +680,18 @@ bubble_plotting <- function(data, subtype_str){
     guides(colour = guide_legend(order = 1),
            size = guide_legend(order = 2)) +
     scale_shape_identity() +
-    theme(axis.text.x = element_text(size = 6, angle = 45, hjust=1, vjust = 1)) +
-    theme(axis.text.y = element_text(size = 6))+
-    #theme(aspect.ratio = aspect_ratio)+
+    theme(axis.text.x = element_text(size = 6, angle = 90, hjust=1, vjust = 1)) +
+    theme(axis.text.y = element_text(size = 8))+
     theme(legend.position = "right")+
     theme(legend.key.size = unit(0.3, 'cm'))+
     scale_size(range = c(0, 2))
   
-  ggsave(paste0(subtype_str, "_20240520_senesce.pdf"), p, device = "pdf",
-         height = 3, width = 12, units = "in")
+  ggsave(paste0(subtype_str, "_all.pdf"), r, device = "pdf", height = 8, width = 6.5)
+  
 }
 
 setwd("/Users/addie/desktop")
 
 # Run the bubble plotting funtions
-bubble_plotting(data_master_TNBC, "TNBC")
-bubble_plotting(data_master_ER, "ER+")
+bubble_plotting(data_master_TNBC, "TNBC", max = maxboth)
+bubble_plotting(data_master_ER, "ER+", max = maxboth)

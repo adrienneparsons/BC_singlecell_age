@@ -1,3 +1,7 @@
+# Figures S2 ad S3: Proportion analysis with age
+###########################################################
+# Adrienne Parsons, 2024-09-10
+
 # Prerequisites -----------------------------------------------------------------------------------
 library(tidyverse)
 library(data.table)
@@ -91,15 +95,14 @@ for(type in unique(seu.TNBC$celltype_major)){
   print(length(unique(type_obj$celltype_minor)))
 }
 
-# The maximum is 13; choose 5 high contrast colors for plotting stacked proportion bar charts
-colors <- c("#9b5de5", "#ff9f1c", "#00bbf9", "#fee440", "#f15bb5", "#8bc34a", "#f44336", "#072ac8",
-            "#b52dc8", "#dbf679", "#e76f51", "#a0c4ff", "#51696c")
+# The maximum is 5; choose 5 high contrast colors for plotting stacked proportion bar charts
+colors <- c("#9b5de5", "#ff9f1c", "#00bbf9", "#fee440", "#f15bb5")
 
 # For each major cell type:
 for(type in unique(seu.TNBC$celltype_major)){
   print(type)
   
-  # minor the seurat object to just be the majojr cell type
+  # subset the seurat object to just be the major cell type
   type_obj <- subset(seu.TNBC, subset = celltype_major == type)
   
   # Make a data frame of minor cell types within that major cell type, populate with the unique minor cell types
@@ -133,6 +136,7 @@ for(type in unique(seu.TNBC$celltype_major)){
       # Save
       ggsave(paste0(type, "_barchart.pdf"), p_minors, device = "pdf", height = 3, width = 4)
       
+      # Generate a variable for the scatter plots
       for_sp <- p_minors$data
       for_sp$prop <- NA
       
@@ -172,7 +176,7 @@ for(type in unique(seu.TNBC$celltype_major)){
 # Change working directory for ER+
 setwd("/Users/addie/desktop/proportions 2/ER")
 
-# minor the data to just be the ER+ donors and add donorss ages to Seurat object metadata
+# subset the data to just be the ER+ donors and add donors ages to Seurat object metadata
 seu.ER <- subset(seu.all, subset = subtype == "ER+")
 seu.ER@meta.data$Age <- NA
 for(donor in unique(seu.ER$orig.ident)){
@@ -194,7 +198,7 @@ for(type in unique(seu.ER$celltype_major)){
 for(type in unique(seu.ER$celltype_major)){
   print(type)
   
-  # minor the seurat object to just be the majojr cell type
+  # subset the seurat object to just be the majojr cell type
   type_obj <- subset(seu.ER, subset = celltype_major == type)
   
   # Make a data frame of minor cell types within that major cell type, populate with the unique minor cell types
@@ -228,6 +232,7 @@ for(type in unique(seu.ER$celltype_major)){
   # Save
   ggsave(paste0(type, "_barchart.pdf"), p_minors, device = "pdf", height = 3, width = 4)
   
+  # Make a variable for the scatter plots
   for_sp <- p_minors$data
   for_sp$prop <- NA
   

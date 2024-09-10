@@ -1,5 +1,9 @@
+# Figure 1: DE gene analysis and GSEA
+###########################################################
+# Adrienne Parsons, 2024-05-07
+
 # Get the DE genes between early and late recurrence donors and old and young in METABRIC
-# for disease subtype
+# for disease subtype, then run GSEA
 
 # Prerequisite packages
 library(ggplot2)
@@ -24,7 +28,7 @@ clin_sample <- read.table("/Users/addie/Dropbox (Partners HealthCare)/Single-cel
 colnames(clin_sample) <- clin_sample[1,]
 clin_sample <- clin_sample[-1,]
 
-# Add columns to the clinical data to include tumor stage and make numerics numeric
+# Add columns to the clinical data to include tumor stage and make numeric values numeric vectors
 clin_metabric$AGE_AT_DIAGNOSIS <- as.numeric(clin_metabric$AGE_AT_DIAGNOSIS)
 clin_metabric$RFS_MONTHS <- as.numeric(clin_metabric$RFS_MONTHS)
 clin_metabric$TUMOR_STAGE <- clin_sample$TUMOR_STAGE
@@ -76,6 +80,7 @@ for(c in c("ER_hp_old", "ER_hp_young", "ER_lp_old", "ER_lp_young",
 ER_young <- rbind(ER_hp_young, ER_lp_young)
 ER_old <- rbind(ER_hp_old, ER_lp_old)
 
+# Remove variables to avoid confusion
 rm("ER_hp_old", "ER_lp_old", "ER_hp_young", "ER_lp_young")
 
 # Read in and format the gene expression data for TNBC and ER+
@@ -168,10 +173,10 @@ var <- var[order(var)]
 # plot
 plot(1:length(var), var)
 
-# Subset the data to just be the 675 genes with the highest spread of expression
+# Subset the data to just be the genes with the highest spread of expression
 df3 <- df2[rownames(df2) %in% names(var[23500:length(var)]),]
 
-# Exponeentiate the data to resemble raw counts (cBioPortal log2-normalizes data)
+# Exponentiate the data to resemble raw counts (cBioPortal log2-normalizes data)
 df3 <- 2^df3
 
 # Create a DGEList object
@@ -215,60 +220,11 @@ setwd("/Users/addie/desktop")
 
 for(df in c("top.table_ER", "top.table_TNBC")){
   print(df)
-  dfi <- get(df)
+  dd3 <- get(df)
   
   # Copy the data for volcano plot
-  dd3 <- dfi
   dd3$gene <- rownames(dd3)
   dd3$abs <- abs(dd3$logFC)
-  
-  # Subset the data to just the genes with low adjusted p-values and print number of genes in each direction
-  df_sub <- dfi[dfi$adj.P.Val < 0.05,]
-  print("logfc < 0")
-  print(nrow(df_sub[df_sub$logFC < 0,]))
-  print("logfc > 0")
-  print(nrow(df_sub[df_sub$logFC > 0,]))
-  
-  df_sub$abs <- abs(df_sub$logFC)
-  df_sub$gene <- rownames(df_sub)
-  
-  # Only select the top 20 most differentially expressed genes by abs(logfc), selecting up to 20 enriched in
-  # either direction
-  dd <- df_sub[order(df_sub$abs, decreasing = T),]
-  
-  dd_up <- dd[dd$logFC > 0,]
-  dd_down <- dd[dd$logFC < 0,]
-  
-  #Get up to the top 20 most differentially expressed in young or older
-  if(nrow(dd_up) > 20){
-    dd_up <- dd_up[1:20,]
-  }
-  
-  if(nrow(dd_down) > 20){
-    dd_down <- dd_down[1:20,]
-  }
-  
-  dd2 <- rbind(dd_up, dd_down)
-  
-  # Set up for bar chart plotting
-  dd2$logFC <- as.numeric(dd2$logFC)
-  
-  # Label enrichment direction by whether log fold change > or < 0
-  dd2$direction <- NA
-  dd2$direction[dd2$logFC > 0] <- "enriched in older"
-  dd2$direction[dd2$logFC < 0] <- "enriched in younger"
-  
-  # Plot the barr charts of most DE genes in both directions
-  plot <- ggplot(dd2, aes(x = logFC, y = fct_reorder(gene, logFC), fill = direction))+
-    geom_bar(stat = "identity")+
-    xlim(c(max(abs(as.numeric(dd2$logFC)))*-1, max(abs(as.numeric(dd2$logFC)))))+
-    scale_fill_manual(values = c("turquoise4", "red2"))+
-    ylab("Gene")+theme(aspect.ratio = 3)+xlab("Log2 Fold Change")+
-    theme(text = element_text(size = 8))
-  
-  assign(paste0(df, "_plot"), plot)
-  ggsave(paste0(df, "_plot.pdf"), plot, device = "pdf", height = nrow(dd2)/12)
-  
   
   # Generate a Volcano plot based on the limma analysis differentially
   # abundant genes
@@ -276,15 +232,9 @@ for(df in c("top.table_ER", "top.table_TNBC")){
   dd3$direction <- NA
   
   # Only add gene names to the most differentially expressed genes
-  dd3$label <- NA
-  
   # Add the gene names to any gene with adjusted p < 0.05 and magnitude fold change > 0.5
-
-    dd3$label[dd3$minuslog10p > -log10(0.05) & abs(dd3$logFC) > 0.5] <- dd3$gene[dd3$minuslog10p > -log10(0.05) & abs(dd3$logFC) > 0.5]
-  
-  
-  
-
+  dd3$label <- NA
+  dd3$label[dd3$minuslog10p > -log10(0.05) & abs(dd3$logFC) > 0.5] <- dd3$gene[dd3$minuslog10p > -log10(0.05) & abs(dd3$logFC) > 0.5]
   
   # Add in enrichment annotations for coloring the dots
   dd3$direction <- "enriched in older"
