@@ -48,7 +48,7 @@ fun <- function(data){
           final_data <- rbind(final_data, data[i,])
           # then duplicate line i but change "old" to young in that newest line
           final_data <- rbind(final_data, data[i,])
-          final_data$dataset[nrow(final_data)] <- "ER.young"
+          final_data$dataset[nrow(final_data)] <- paste0(dataset, ".young")
           # And change the probability value for that final line to 0
           final_data$prob[nrow(final_data)] <- 0
           # Then move to the next line in the input data and repeat
@@ -64,7 +64,7 @@ fun <- function(data){
           final_data <- rbind(final_data, data[i,])
           #then duplicate line i but change "young" to old in that newest line
           final_data <- rbind(final_data, data[i,])
-          final_data$dataset[nrow(final_data)] <- "ER.old"
+          final_data$dataset[nrow(final_data)] <- paste0(dataset, ".old")
           # And change the probability value for that final line to 0
           final_data$prob[nrow(final_data)] <- 0
           # Then move to the next line in the input data and repeat
@@ -131,7 +131,7 @@ bubble_dataTNBC <- bubble_data_all_2
 # Logistic regression
 setwd("/Users/addie/desktop")
 bubble_data_all_3 <- bubble_data_all_2 %>% arrange(interaction_name, desc(group.names), dataset)
-write.xlsx(bubble_data_all_3, "Bubbledata_TNBC_withseed2.xlsx", sheetName = "Sheet1")
+write.xlsx(bubble_data_all_3, "20240829_Bubbledata_TNBC.xlsx", sheetName = "Sheet1")
 
 # Generate an empty data frame to populate with logistic regression results
 df <- data.frame(pathway_name = character(0),
@@ -168,7 +168,7 @@ df2 <- rbind(dfyoung,dfold)
 # Format the data for logistic regression, making na values 0
 df3 <- pivot_wider(df2, names_from = pathway_name, values_from = avg_prob)
 df3[is.na(df3)] <- 0
-write.xlsx(df3, "Bubbledata_TNBC_glm_withseed2.xlsx", sheetName = "Sheet1")
+write.xlsx(df3, "20240829_Bubbledata_TNBC_glm.xlsx", sheetName = "Sheet1")
 
 # Change annotations to 0 and 1 for logistic regression
 df3$dataset <- factor(df3$dataset, levels=c("Young","Old"), labels = c(0,1))
@@ -209,7 +209,7 @@ table_pathwaysTNBC$pathwaysTNBC <- make.names(table_pathwaysTNBC$pathwaysTNBC)
 suppltable_values_def <- merge(suppltable_values,table_pathwaysTNBC,by.x="pathway_name",by.y="pathwaysTNBC")
 suppltable_values_def$included_fig5 <- ifelse(as.numeric(suppltable_values_def$pvalue) < 0.05 & suppltable_values_def$Freq >= 15, TRUE, FALSE)
 
-write.xlsx(suppltable_values_def,"Bubbledata_TNBC_glm_res_withseed2.xlsx",sheetName = "Sheet1")
+write.xlsx(suppltable_values_def,"20240829_Bubbledata_TNBC_glm_res.xlsx",sheetName = "Sheet1")
 
 # Bubble plot of TNBC logistic regression pathways
 sp_from_lr_ranknet <- c("GALECTIN","CypA","PLAU","FN1","THBS","APP","MHC-I","MPZ","ADGRE")
@@ -269,7 +269,7 @@ bubble_dataER <- bubble_data_all_2
 # Logistic regression
 setwd("/Users/addie/desktop")
 bubble_data_all_3 <- bubble_data_all_2 %>% arrange(interaction_name, desc(group.names), dataset)
-write.xlsx(bubble_data_all_3, "Bubbledata_ER_withseed2.xlsx", sheetName = "Sheet1")
+write.xlsx(bubble_data_all_3, "20240829_Bubbledata_ER.xlsx", sheetName = "Sheet1")
 
 # Generate an empty data frame to populate with logistic regression results
 df <- data.frame(pathway_name = character(0),
@@ -306,7 +306,7 @@ df2 <- rbind(dfyoung,dfold)
 # Format the data for logistic regression, making na values 0
 df3 <- pivot_wider(df2, names_from = pathway_name, values_from = avg_prob)
 df3[is.na(df3)] <- 0
-write.xlsx(df3, "Bubbledata_ER_glm_withseed2.xlsx", sheetName = "Sheet1")
+write.xlsx(df3, "20240829_Bubbledata_ER_glm.xlsx", sheetName = "Sheet1")
 
 # Change annotations to 0 and 1 for logistic regression
 df3$dataset <- factor(df3$dataset, levels=c("Young","Old"), labels = c(0,1))
@@ -347,7 +347,7 @@ table_pathwaysER$pathwaysER <- make.names(table_pathwaysER$pathwaysER)
 suppltable_values_def <- merge(suppltable_values,table_pathwaysER,by.x="pathway_name",by.y="pathwaysER")
 suppltable_values_def$included_fig5 <- ifelse(as.numeric(suppltable_values_def$pvalue) < 0.05 & suppltable_values_def$Freq >= 15, TRUE, FALSE)
 
-write.xlsx(suppltable_values_def,"Bubbledata_ER_glm_res_withseed2.xlsx",sheetName = "Sheet1")
+write.xlsx(suppltable_values_def,"20240829_Bubbledata_ER_glm_res.xlsx",sheetName = "Sheet1")
 
 # Bubble plot of ER logistic regression pathways
 sp_from_lr_ranknet <- c("FN1","THBS","MIF","LAMININ")
