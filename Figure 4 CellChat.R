@@ -9,21 +9,22 @@ library(RColorBrewer)
 library(ComplexHeatmap)
 
 ## MAJOR CELL TYPES
+# First, generate the CellChat objects using the Create CellChat Objects.R file (cellgroup = "celltype_major")
 # Load the cellchat objects previously generated
 # Create an object list
 # DO A SEPARATE ANALYSIS FOR TNBC AND ER
 
+data_path <- "<YOUR DATA PATH>"
+
 #--------------------------------------------------------------------------------------------------------------------------------
 # TNBC
-# Change directory!!
-cellchatTNBC.young <- readRDS("C:/Users/18458505Q/Desktop/HTVC Esther/BWH/cellchatTN.young_computeCommunProb_psize_TRUE_celltype_major.Rdata")
-cellchatTNBC.old <- readRDS("C:/Users/18458505Q/Desktop/HTVC Esther/BWH/cellchatTN.old_computeCommunProb_psize_TRUE_celltype_major.Rdata")
+cellchatTNBC.young <- readRDS(paste0(data_path,"/cellchatTN.young_computeCommunProb_psize_TRUE_celltype_major.Rdata"))
+cellchatTNBC.old <- readRDS(paste0(data_path,"/cellchatTN.old_computeCommunProb_psize_TRUE_celltype_major.Rdata"))
 object.list <- list(TNBC.young = cellchatTNBC.young, TNBC.old = cellchatTNBC.old)
 
 # ER
-# Change directory!!
-cellchatER.young <- readRDS("C:/Users/18458505Q/Desktop/HTVC Esther/BWH/cellchatER.young_computeCommunProb_psize_TRUE_celltype_major.Rdata")
-cellchatER.old <- readRDS("C:/Users/18458505Q/Desktop/HTVC Esther/BWH/cellchatER.old_computeCommunProb_psize_TRUE_celltype_major.Rdata")
+cellchatER.young <- readRDS(paste0(data_path,"/cellchatER.young_computeCommunProb_psize_TRUE_celltype_major.Rdata"))
+cellchatER.old <- readRDS(paste0(data_path,"/cellchatER.old_computeCommunProb_psize_TRUE_celltype_major.Rdata"))
 object.list <- list(ER.young = cellchatER.young, ER.old = cellchatER.old)
 #--------------------------------------------------------------------------------------------------------------------------------
 
@@ -49,6 +50,7 @@ par(mfrow = c(1,1), xpd=TRUE)
 netVisual_diffInteraction(cellchat, weight.scale = T, measure = "weight")
 
 ## MINOR CELL TYPES
+# First, generate the CellChat objects using the Create CellChat Objects.R file (cellgroup = "celltype_minor")
 # Load the cellchat objects previously generated
 
 # Create an object list
@@ -56,15 +58,13 @@ netVisual_diffInteraction(cellchat, weight.scale = T, measure = "weight")
 
 #--------------------------------------------------------------------------------------------------------------------------------
 # TNBC
-# Change directory!!
-cellchatTNBC.young <- readRDS("C:/Users/18458505Q/Desktop/HTVC Esther/BWH/RData/cellchat_files/cellchatTN.young_computeCommunProb_psize_TRUE.Rdata")
-cellchatTNBC.old <- readRDS("C:/Users/18458505Q/Desktop/HTVC Esther/BWH/RData/cellchat_files/cellchatTN.old_computeCommunProb_psize_TRUE.Rdata")
+cellchatTNBC.young <- readRDS(paste0(data_path,"/cellchatTN.young_computeCommunProb_psize_TRUE.Rdata"))
+cellchatTNBC.old <- readRDS(paste0(data_path,"/cellchatTN.old_computeCommunProb_psize_TRUE.Rdata"))
 object.list <- list(TNBC.young = cellchatTNBC.young, TNBC.old = cellchatTNBC.old)
 
 # ER
-# Change directory!!
-cellchatER.young <- readRDS("C:/Users/18458505Q/Desktop/HTVC Esther/BWH/RData/cellchat_files/cellchatER.young_computeCommunProb_psize_TRUE.Rdata")
-cellchatER.old <- readRDS("C:/Users/18458505Q/Desktop/HTVC Esther/BWH/RData/cellchat_files/cellchatER.old_computeCommunProb_psize_TRUE.Rdata")
+cellchatER.young <- readRDS(paste0(data_path,"/cellchatER.young_computeCommunProb_psize_TRUE.Rdata"))
+cellchatER.old <- readRDS(paste0(data_path,"/cellchatER.old_computeCommunProb_psize_TRUE.Rdata"))
 object.list <- list(ER.young = cellchatER.young, ER.old = cellchatER.old)
 #--------------------------------------------------------------------------------------------------------------------------------
 
@@ -77,7 +77,7 @@ object.list <- lapply(object.list, function(x) aggregateNet(x))
 
 # liftCellchat() if necessary 
 lapply(object.list, function(x) length(levels(x@idents)))
-# Remove the following code comment for ER (ER young has no B cells Naive, so we need to lift up)
+# Remove the following code comment only for ER (ER young has no B cells Naive, so we need to lift up)
 # object.list[[1]] <- liftCellChat(object.list[[1]], levels(object.list[[2]]@idents))
 
 # Merge CellChat object of each dataset together

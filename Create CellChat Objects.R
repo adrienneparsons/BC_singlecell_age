@@ -17,7 +17,10 @@ library(RColorBrewer)
 library(ComplexHeatmap)
 
 # options(Seurat.object.assay.version = "v5")
-# Load the SWARBRICK dataset
+# Load the SWARBRICK dataset, available for download through the Broad Single-Cell portal at https://singlecell.broadinstitute.org/single_cell/study/SCP1039
+# Also available at GEO Accession # GSE176078
+
+data_path <- "<YOUR DATA PATH>"
 
 # Function to recursively read scRNAseq data using read10x and create seurat objects including metadata
 datasheet <- "metadata.csv"
@@ -43,8 +46,8 @@ read_scRNAseq_data <- function(directory_path) {
   return(seurat_list)
 }
 
-# Specify the path to the 'data' folder
-data_folder_path <- "C:/Users/18458505Q/Desktop/HTVC Esther/BWH/Data_Swarbrick"
+# Specify the path to the 'Data_Swarbrick' folder
+data_folder_path <- paste0(data_path,"/Data_Swarbrick")
 # Call the function to read scRNAseq data recursively
 scRNAseq_data <- read_scRNAseq_data(data_folder_path)
 
@@ -97,8 +100,7 @@ ggplot(df2, aes(x=seu_tnbc.celltype_minor,
   geom_boxplot() + labs(title="Plot of nFeature_RNA per cell type TNBC",x="Cell type",y="nFeature_RNA",fill="Cell type") +
   theme_classic() + 
   theme(axis.text.x = element_text(angle = 90))
-round(0.15 * length(seu_er_tnbc$nFeature_RNA)) # Delete the last 15% (pos=12113)
-seu_er_tnbc$nFeature_RNA[order(seu_er_tnbc$nFeature_RNA,decreasing=TRUE)][12113] # 3109
+
 summary(seu_er_tnbc$percent.mito)
 # Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
 # 0.000   3.285   5.458   6.324   8.527  19.997
@@ -108,7 +110,7 @@ summary(seu_er$percent.mito)
 summary(seu_tnbc$percent.mito)
 # Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
 # 0.000   2.756   4.620   5.511   7.207  19.997
-seu_er_tnbc$percent.mito[order(seu_er_tnbc$percent.mito,decreasing=TRUE)][12113] #10.62866
+
 dff <- data.frame(seu_er_tnbc$percent.mito,seu_er_tnbc$celltype_minor)
 dff1 <- data.frame(seu_er$percent.mito,seu_er$celltype_minor)
 dff2 <- data.frame(seu_tnbc$percent.mito,seu_tnbc$celltype_minor)
@@ -165,10 +167,8 @@ DimPlot(seu_def, reduction = "umap", group.by = c("celltype_major"))
 DimPlot(seu_def, reduction = "umap", group.by = c("celltype_minor"))
 DimPlot(seu_def, reduction = "umap", group.by = c("celltype_subset"))
 
-#DimPlot(seu_def, reduction = "umap", split.by = "orig.ident")
-
 # Add patients' age to the object
-agedb <- read.xlsx2("C:/Users/18458505Q/Desktop/HTVC Esther/BWH/wu,swarbrick2021 - Supplement.xlsx", sheetIndex = 1, startRow = 4)
+agedb <- read.xlsx2(paste0(data_path,"/wu,swarbrick2021 - Supplement.xlsx"), sheetIndex = 1, startRow = 4)
 agedb <- agedb[agedb$Subtype.by.IHC == "ER+"|agedb$Subtype.by.IHC == "TNBC",]
 agedb <- agedb[,c(1,3)]
 agedb$Case.ID <- str_sub(agedb$Case.ID,1,4)
@@ -180,7 +180,7 @@ seu_def[["ID"]] <- NULL
 
 # Save seurat objects
 saveRDS(seu_def,
-        "C:/Users/esthe/Desktop/PhD/BWH/RData/seurat_CCA_integrated_def_subset.Rdata")
+        paste0(data_path,"/seurat_CCA_integrated_def_subset.Rdata"))
 
 # Subset ER+ & TNBC in two objects
 seu_def_er <- subset(seu_def, subset = subtype == "ER")
@@ -211,33 +211,33 @@ for (i in 1:length(seu_def_tnbc$age)){
 seu_def_tnbc$groupage <- groupageTN
 
 saveRDS(seu_def_er,
-        "C:/Users/esthe/Desktop/PhD/BWH/RData/seurat_CCA_integrated_defER_subset.Rdata")
+        paste0(data_path,"/seurat_CCA_integrated_defER_subset.Rdata"))
 saveRDS(seu_def_tnbc,
-        "C:/Users/esthe/Desktop/PhD/BWH/RData/seurat_CCA_integrated_defTNBC_subset.Rdata")
+        paste0(data_path,"/seurat_CCA_integrated_defTNBC_subset.Rdata"))
 
 seu_def_tnbc_old <- subset(seu_def_tnbc, subset = groupage == "old")
 seu_def_tnbc_young <- subset(seu_def_tnbc, subset = groupage == "young")
 saveRDS(seu_def_tnbc_old,
-        "C:/Users/esthe/Desktop/PhD/BWH/RData/seurat_CCA_integrated_defTNBCold_subset.Rdata")
+        paste0(data_path,"/seurat_CCA_integrated_defTNBCold_subset.Rdata"))
 saveRDS(seu_def_tnbc_young,
-        "C:/Users/esthe/Desktop/PhD/BWH/RData/seurat_CCA_integrated_defTNBCyoung_subset.Rdata")
+        paste0(data_path,"/seurat_CCA_integrated_defTNBCyoung_subset.Rdata"))
 
 seu_def_er_old <- subset(seu_def_er, subset = groupage == "old")
 seu_def_er_young <- subset(seu_def_er, subset = groupage == "young")
 saveRDS(seu_def_er_old,
-        "C:/Users/esthe/Desktop/PhD/BWH/RData/seurat_CCA_integrated_defERold_subset.Rdata")
+        paste0(data_path,"/seurat_CCA_integrated_defERold_subset.Rdata"))
 saveRDS(seu_def_er_young,
-        "C:/Users/esthe/Desktop/PhD/BWH/RData/seurat_CCA_integrated_defERyoung_subset.Rdata")
+        paste0(data_path,"/seurat_CCA_integrated_defERyoung_subset.Rdata"))
 
 ## All CellChat data: ER/ER.old/ER.young/TN/TN.old/TN.young
 
 # Load the Seurat objects
-seu_def_er <- readRDS("C:/Users/esthe/Desktop/PhD/BWH/RData/seurat_CCA_integrated_defER_subset.Rdata")
-seu_def_er_old <- readRDS("C:/Users/esthe/Desktop/PhD/BWH/RData/seurat_CCA_integrated_defERold_subset.Rdata")
-seu_def_er_young <- readRDS("C:/Users/esthe/Desktop/PhD/BWH/RData/seurat_CCA_integrated_defERyoung_subset.Rdata")
-seu_def_tnbc <- readRDS("C:/Users/esthe/Desktop/PhD/BWH/RData/seurat_CCA_integrated_defTNBC_subset.Rdata")
-seu_def_tnbc_old <- readRDS("C:/Users/esthe/Desktop/PhD/BWH/RData/seurat_CCA_integrated_defTNBCold_subset.Rdata")
-seu_def_tnbc_young <- readRDS("C:/Users/esthe/Desktop/PhD/BWH/RData/seurat_CCA_integrated_defTNBCyoung_subset.Rdata")
+seu_def_er <- readRDS(paste0(data_path,"/seurat_CCA_integrated_defER_subset.Rdata"))
+seu_def_er_old <- readRDS(paste0(data_path,"/seurat_CCA_integrated_defERold_subset.Rdata"))
+seu_def_er_young <- readRDS(paste0(data_path,"/seurat_CCA_integrated_defERyoung_subset.Rdata"))
+seu_def_tnbc <- readRDS(paste0(data_path,"/seurat_CCA_integrated_defTNBC_subset.Rdata"))
+seu_def_tnbc_old <- readRDS(paste0(data_path,"/seurat_CCA_integrated_defTNBCold_subset.Rdata"))
+seu_def_tnbc_young <- readRDS(paste0(data_path,"/seurat_CCA_integrated_defTNBCyoung_subset.Rdata"))
 
 # Create CellChat objects
 # Define group.by 
@@ -300,82 +300,4 @@ psize = TRUE
 options(future.globals.maxSize = 600 * 1024^2) # default: 500 * 1024^2 = 500 MiB
 cc.list <- lapply(cc.list, function(x) computeCommunProb(x, population.size = psize))
 
-lapply(names(cc.list), function(x) saveRDS(cc.list[[x]], paste0("C:/Users/esthe/Desktop/PhD/BWH/cellchat",x,"_computeCommunProb_psize_",psize,"_",cellgroup,".Rdata")))
-
-# -------------------------------------------------------------------------
-# Create the TNBC CellChat object
-cellchatTN.old <- readRDS("/Users/addie/Dropbox (Partners HealthCare)/McLab lab meeting 2020/Esther Sauras Colon/CellChat files/cellchatTN.old_computeCommunProb_psize_TRUE.Rdata")
-cellchatTN.young <- readRDS("/Users/addie/Dropbox (Partners HealthCare)/McLab lab meeting 2020/Esther Sauras Colon/CellChat files/cellchatTN.young_computeCommunProb_psize_TRUE.Rdata")
-
-# Set the ligand-receptor interaction database
-CellChatDB <- CellChatDB.human 
-showDatabaseCategory(CellChatDB)
-
-# use a subset of CellChatDB for cell-cell communication analysis
-# use all CellChatDB for cell-cell communication analysis
-CellChatDB.use <- CellChatDB # simply use the default CellChatDB
-
-# set the used database in the object
-cellchatTN.old@DB <- CellChatDB.use
-cellchatTN.young@DB <- CellChatDB.use
-
-# Set up parallel processing
-future::plan("multisession", workers = 4)
-options(future.globals.maxSize = 600 * 1024^2) # default: 500 * 1024^2 = 500 MiB
-
-# -------------------------------------------------------------------------
-# Add objects to a list
-object.list <- list(TNBC.young = cellchatTN.young, TNBC.old = cellchatTN.old)
-
-# Check min.cells
-lapply(object.list, function(x) summary(x@idents))
-# Filter out the cell-cell communication if there are only few number of cells in certain cell groups
-object.list <- lapply(object.list, function(x) filterCommunication(x, min.cells = 3))
-object.list <- lapply(object.list, function(x) computeCommunProbPathway(x))
-object.list <- lapply(object.list, function(x) aggregateNet(x))
-
-# liftCellchat() if necessary
-lapply(object.list, function(x) length(levels(x@idents)))
-object.list[[1]] <- liftCellChat(object.list[[1]], levels(object.list[[2]]@idents))
-
-# Merge CellChat object of each dataset together
-cellchatTNBC <- mergeCellChat(object.list, add.names = names(object.list))
-
-# Repeat for ER+
-# Create the ER+ CellChat object
-cellchatER.old <- readRDS("/Users/addie/Dropbox (Partners HealthCare)/McLab lab meeting 2020/Esther Sauras Colon/CellChat files/cellchatER.old_computeCommunProb_psize_TRUE.Rdata")
-cellchatER.young <- readRDS("/Users/addie/Dropbox (Partners HealthCare)/McLab lab meeting 2020/Esther Sauras Colon/CellChat files/cellchatER.young_computeCommunProb_psize_TRUE.Rdata")
-
-# Set the ligand-receptor interaction database
-CellChatDB <- CellChatDB.human 
-showDatabaseCategory(CellChatDB)
-
-# use all CellChatDB for cell-cell communication analysis
-CellChatDB.use <- CellChatDB # simply use the default CellChatDB
-
-# set the used database in the object
-cellchatER.old@DB <- CellChatDB.use
-cellchatER.young@DB <- CellChatDB.use
-
-# Set uup parallel processing
-future::plan("multisession", workers = 4) # do parallel
-options(future.globals.maxSize = 600 * 1024^2) # default: 500 * 1024^2 = 500 MiB
-
-# Add the loaded CellChat objects to a list
-object.list <- list(ER.young = cellchatER.young, ER.old = cellchatER.old)
-
-# Check min.cells
-lapply(object.list, function(x) summary(x@idents))
-# Filter out the cell-cell communication if there are only few number of cells in certain cell groups
-object.list <- lapply(object.list, function(x) filterCommunication(x, min.cells = 3))
-object.list <- lapply(object.list, function(x) computeCommunProbPathway(x))
-object.list <- lapply(object.list, function(x) aggregateNet(x))
-
-# liftCellchat() if necessary
-lapply(object.list, function(x) length(levels(x@idents)))
-object.list[[1]] <- liftCellChat(object.list[[1]], levels(object.list[[2]]@idents))
-
-# Merge CellChat object of each dataset together
-cellchatER <- mergeCellChat(object.list, add.names = names(object.list))
-
-# Use these new objects for additional analyses
+lapply(names(cc.list), function(x) saveRDS(cc.list[[x]], paste0(data_path,"/",x,"_computeCommunProb_psize_",psize,"_",cellgroup,".Rdata")))

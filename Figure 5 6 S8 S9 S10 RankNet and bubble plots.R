@@ -8,7 +8,48 @@ library(tidyr)
 library(CellChat)
 library(gtools)
 
-# First, generate the CellChat objects using the Create CellChat Objects.R file
+## MINOR CELL TYPES
+# First, generate the CellChat objects using the Create CellChat Objects.R file (cellgroup = "celltype_minor")
+# Load the cellchat objects previously generated
+
+data_path <- "<YOUR DATA PATH>"
+
+#--------------------------------------------------------------------------------------------------------------------------------
+# TNBC
+cellchatTNBC.young <- readRDS(paste0(data_path,"/cellchatTN.young_computeCommunProb_psize_TRUE.Rdata"))
+cellchatTNBC.old <- readRDS(paste0(data_path,"/cellchatTN.old_computeCommunProb_psize_TRUE.Rdata"))
+object.list <- list(TNBC.young = cellchatTNBC.young, TNBC.old = cellchatTNBC.old)
+
+# Check min.cells
+lapply(object.list, function(x) summary(x@idents))
+# Filter out the cell-cell communication if there are only few number of cells in certain cell groups
+object.list <- lapply(object.list, function(x) filterCommunication(x, min.cells = 3))
+object.list <- lapply(object.list, function(x) computeCommunProbPathway(x))
+object.list <- lapply(object.list, function(x) aggregateNet(x))
+
+# Merge CellChat object of each dataset together
+cellchatTNBC <- mergeCellChat(object.list, add.names = names(object.list))
+
+# ER
+cellchatER.young <- readRDS(paste0(data_path,"/cellchatER.young_computeCommunProb_psize_TRUE.Rdata"))
+cellchatER.old <- readRDS(paste0(data_path,"/cellchatER.old_computeCommunProb_psize_TRUE.Rdata"))
+object.list <- list(ER.young = cellchatER.young, ER.old = cellchatER.old)
+
+# Check min.cells
+lapply(object.list, function(x) summary(x@idents))
+# Filter out the cell-cell communication if there are only few number of cells in certain cell groups
+object.list <- lapply(object.list, function(x) filterCommunication(x, min.cells = 3))
+object.list <- lapply(object.list, function(x) computeCommunProbPathway(x))
+object.list <- lapply(object.list, function(x) aggregateNet(x))
+
+# liftCellchat() if necessary 
+lapply(object.list, function(x) length(levels(x@idents)))
+# ER young has no B cells Naive, so we need to lift up
+object.list[[1]] <- liftCellChat(object.list[[1]], levels(object.list[[2]]@idents))
+
+# Merge CellChat object of each dataset together
+cellchatER <- mergeCellChat(object.list, add.names = names(object.list))
+#--------------------------------------------------------------------------------------------------------------------------------
 
 # Write a function that will be useful for formatting the data later
 fun <- function(data){
@@ -85,10 +126,12 @@ fun <- function(data){
 ## RankNet TNBC
 ## iCAF, myCAF, basal, CD4, CD8, macrophages, monocytes
 
+TNBCdir <- "<YOUR DATA PATH FOR TNBC RESULTS>"
+
 # Set up a list of unique pathway names
 pathwaysTNBC <- list()
 
-setwd("/Users/addie/desktop")
+setwd(TNBCdir)
 # For each of the seven cell types make a rank net with each of the seven cell types and save
 for(type in c("CAFs MSC iCAF-like", "CAFs myCAF-like", "T cells CD8+", "T cells CD4+", "Monocyte", "Macrophage", "Cancer Basal SC")){
   for(type2 in c("CAFs MSC iCAF-like", "CAFs myCAF-like", "T cells CD8+", "T cells CD4+", "Monocyte", "Macrophage", "Cancer Basal SC")){
@@ -133,7 +176,7 @@ bubble_data_all_2 <- fun(bubble_data_all)
 bubble_dataTNBC <- bubble_data_all_2
 
 # Logistic regression
-setwd("/Users/addie/desktop")
+setwd(TNBCdir)
 bubble_data_all_3 <- bubble_data_all_2 %>% arrange(interaction_name, desc(group.names), dataset)
 write.xlsx(bubble_data_all_3, "Bubbledata_TNBC.xlsx", sheetName = "Sheet1")
 
@@ -172,12 +215,12 @@ df2 <- rbind(dfyoung,dfold)
 # Format the data for logistic regression, making na values 0
 df3 <- pivot_wider(df2, names_from = pathway_name, values_from = avg_prob)
 df3[is.na(df3)] <- 0
-write.xlsx(df3, "20240829_Bubbledata_TNBC_glm.xlsx", sheetName = "Sheet1")
+write.xlsx(df3, "Bubbledata_TNBC_glm.xlsx", sheetName = "Sheet1")
 
 # Change annotations to 0 and 1 for logistic regression
 df3$dataset <- factor(df3$dataset, levels=c("Young","Old"), labels = c(0,1))
 
-#format the column names for ease
+# Format the column names for ease
 colnames(df3) <- make.names(colnames(df3))
 
 # Univariate logistic regression model
@@ -219,13 +262,17 @@ sp_from_lr_ranknet <- c("GALECTIN","CypA","PLAU","FN1","THBS","APP","MHC-I","MPZ
 netVisual_bubble(cellchatTNBC, signaling = sp_from_lr_ranknet, sources.use = c("CAFs MSC iCAF-like", "CAFs myCAF-like", "T cells CD8+", "T cells CD4+", "Monocyte", "Macrophage", "Cancer Basal SC"), c("CAFs MSC iCAF-like", "CAFs myCAF-like", "T cells CD8+", "T cells CD4+", "Monocyte", "Macrophage", "Cancer Basal SC"), comparison = c(1, 2), angle.x = 45, thresh = 0.01)
 databubble <- netVisual_bubble(cellchatTNBC, signaling = sp_from_lr_ranknet, sources.use = c("CAFs MSC iCAF-like", "CAFs myCAF-like", "T cells CD8+", "T cells CD4+", "Monocyte", "Macrophage", "Cancer Basal SC"), targets.use = c("CAFs MSC iCAF-like", "CAFs myCAF-like", "T cells CD8+", "T cells CD4+", "Monocyte", "Macrophage", "Cancer Basal SC"), comparison = c(1, 2), angle.x = 45, return.data = TRUE)
 
+
+
 ## RankNet ER
 ## iCAF, myCAF, lumA, CD4, CD8, macrophages, PVL Differentiated, ACKR1
+
+ERdir <- "<YOUR DATA PATH FOR ER RESULTS>"
 
 # Set up a list of unique pathway names
 pathwaysER <- list()
 
-setwd("/Users/addie/desktop")
+setwd(ERdir)
 # For each of the seven cell types make a rank net with each of the seven cell types and save
 for(type in c("CAFs MSC iCAF-like", "CAFs myCAF-like", "T cells CD8+", "T cells CD4+", "Endothelial ACKR1", "Macrophage", "PVL Differentiated","Cancer LumA SC")){
   for(type2 in c("CAFs MSC iCAF-like", "CAFs myCAF-like", "T cells CD8+", "T cells CD4+", "Endothelial ACKR1", "Macrophage", "PVL Differentiated","Cancer LumA SC")){
@@ -270,7 +317,7 @@ bubble_data_all_2 <- fun(bubble_data_all)
 bubble_dataER <- bubble_data_all_2
 
 # Logistic regression
-setwd("/Users/addie/desktop")
+setwd(ERdir)
 bubble_data_all_3 <- bubble_data_all_2 %>% arrange(interaction_name, desc(group.names), dataset)
 write.xlsx(bubble_data_all_3, "Bubbledata_ER.xlsx", sheetName = "Sheet1")
 
@@ -314,7 +361,7 @@ write.xlsx(df3, "Bubbledata_ER_glm.xlsx", sheetName = "Sheet1")
 # Change annotations to 0 and 1 for logistic regression
 df3$dataset <- factor(df3$dataset, levels=c("Young","Old"), labels = c(0,1))
 
-#format the column names for ease
+# Format the column names for ease
 colnames(df3) <- make.names(colnames(df3))
 
 # Univariate logistic regression model
@@ -363,8 +410,8 @@ databubble <- netVisual_bubble(cellchatER, signaling = sp_from_lr_ranknet, sourc
 data <- data.frame("Sender" = NA, "Receiver" = NA, "Pathway" = NA, "Probyoung" = NA,
                    "Probold" = NA)
 # For the senders and receivers of interest
-for(sender in unique(cellchatER@meta$celltype_minor)[c(1,4,5,6,11, 12, 16,21)]){
-  for(receiver in unique(cellchatER@meta$celltype_minor)[c(1,4,5,6,11, 12, 16,21)]){
+for(sender in unique(cellchatER@meta$celltype_minor)[c(1,4,5,6,11,12,16,21)]){
+  for(receiver in unique(cellchatER@meta$celltype_minor)[c(1,4,5,6,11,12,16,21)]){
     print(paste0(sender, "->", receiver))
     
     # Try to run the RankNet analysis
@@ -396,8 +443,8 @@ data <- data.frame("Sender" = NA, "Receiver" = NA, "Pathway" = NA, "Probyoung" =
                    "Probold" = NA)
 
 # For each sender and receiver
-for(sender in unique(cellchatTNBC@meta$celltype_minor)[c(4,5,8,9, 13,14, 26)]){
-  for(receiver in unique(cellchatTNBC@meta$celltype_minor)[c(4,5,8,9, 13,14, 26)]){
+for(sender in unique(cellchatTNBC@meta$celltype_minor)[c(4,5,8,9,13,14,26)]){
+  for(receiver in unique(cellchatTNBC@meta$celltype_minor)[c(4,5,8,9,13,14,26)]){
     print(paste0(sender, "->", receiver))
     
     # Run the ranknet and then add the sender, receiver, pathway, and probabilities to the final data
@@ -469,7 +516,7 @@ while(n < nrow(Boxes_ER)){
 
 write.csv(Boxes_ER2, file = "foldchangesERbubble.csv")
 
-# Figure out te balance of young to old boxes in ER+ bubble data
+# Figure out the balance of young to old boxes in ER+ bubble data
 nrow(Boxes_ER2[Boxes_ER2$dataset == "ER.old",])
 nrow(Boxes_ER2[Boxes_ER2$dataset == "ER.young",])
 
