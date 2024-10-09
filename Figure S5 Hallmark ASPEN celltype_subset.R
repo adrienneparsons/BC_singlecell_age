@@ -16,8 +16,10 @@ library(fgsea)
 library(ggplot2)
 
 # Set up ------------------------------------------------------------------------------------------
-setwd("/Users/addie/Dropbox (Personal)/Single-cell_breast_cancer/AnalysisAdrienne")
-#setwd("~/DropboxMGB/Projects/Single-cell_breast_cancer/AnalysisAdrienne") # for Peter
+# Set Seurat Version to v4
+options(Seurat.object.assay.version = "v4")
+
+setwd("<YOUR DATA PATH>")
 rm(list=ls())
 
 # Function to split character string
@@ -25,11 +27,11 @@ cutf <- function(x, f=1, d="/") sapply(strsplit(x, d), function(i) paste(i[f], c
 
 # Load data ---------------------------------------------------------------------------------------
 
-# Load supplemental table
-sup.tib <- read_excel("../Data_Swarbrick/wu,swarbrick2021 - Supplement.xlsx", skip = 3)
+# Load supplemental table, downloaded from https://www.nature.com/articles/s41588-021-00911-1#Sec39
+sup.tib <- read_excel("./wu,swarbrick2021 - Supplement.xlsx", skip = 3)
 
 # Load expression and metadata
-folders <- list.files("../Data_Swarbrick", full.names = T)
+folders <- list.files(".", full.names = T)
 folders <- folders[!grepl("xlsx", folders)]
 data.tib <- tibble(Sample = cutf(folders, d = "/", f = 3),
                    Folder = folders)
@@ -408,7 +410,8 @@ subset_masterdata <- function(subtype_str){
   } 
   
   # Set the working directory and import the GSEA file for analysis
-  setwd("/Users/addie/Desktop/GSEA/")
+  # gmt file obtained in Data folder on GitHub or at https://www.gsea-msigdb.org/gsea/msigdb/human/collections.jsp
+  setwd("<YOUR DATA PATH>")
   GO_file <- "h.all.v7.4.symbols.gmt"
   
   # Run GSEA
@@ -478,7 +481,7 @@ subset_masterdata <- function(subtype_str){
     }
   }
   
-  
+  # Prep the Arm 1 results for final formatting
   row.names(data_wide)=data_wide[,1]
   data_wide=data_wide[,-1]
   data_wide2=as.matrix(data_wide)
@@ -489,7 +492,7 @@ subset_masterdata <- function(subtype_str){
   data_wide3=rbind(data_wide3, colSums(abs(data_wide3)))
   data_wide4=data_wide3[,order(-data_wide3[nrow(data_wide3),])]
   
-  
+  # Make the final data
   data_master <- signature_scoring(hallmark_gene_set_names, obj, data_wide4, subtype_str)
   
   for(type in cell_type){
@@ -502,11 +505,13 @@ subset_masterdata <- function(subtype_str){
 data_master_TNBC <- subset_masterdata("TNBC")
 data_master_ER <- subset_masterdata("ER+")
 
+# Remove unnecessary elements from the environment
 for(type in unique(seu.all$celltype_subset)){
   rm(list = paste0(type, "ER+"))
   rm(list = paste0(type, "TNBC"))
 }
 
+# Get the highest NES value for both ER and TNBC for plotting
 maxboth <- max(c(abs(data_master_TNBC$Enrich_Score), 
                  abs(data_master_ER$Enrich_Score)), na.rm = T)
 
@@ -555,9 +560,9 @@ for(i in 1:nrow(`ER+_pvals`)){
                          data_master_ER3$Enrich_Score == `ER+_pvals`$NES[i]] <- `ER+_pvals`$value[i]
 }
 
-setwd("/Users/addie/desktop")
-write.csv(data_master_TNBC3, file = "TNBC_ASPENResults.csv", row.names = F, quote = F)
-write.csv(data_master_ER3, file = "ER_ASPENResults.csv", row.names = F, quote = F)
+setwd("<YOUR RESULTS PATH>")
+write.csv(data_master_TNBC3, file = "TNBC_ASPENResults_Subset.csv", row.names = F, quote = F)
+write.csv(data_master_ER3, file = "ER_ASPENResults_Subset.csv", row.names = F, quote = F)
 
 # Bubble plotting function
 bubble_plotting <- function(data, subtype_str, max){
@@ -643,51 +648,8 @@ bubble_plotting <- function(data, subtype_str, max){
                      length(hallmark_list[["Miscellaneous"]]) + 8
                    ), font.label = list(size = 8) 
   ) 
-  ggsave(paste0(subtype_str, "_20230328_final.pdf"), q, device = "pdf",
+  ggsave(paste0(subtype_str, "_final.pdf"), q, device = "pdf",
          height = 7, width = 5, units = "in")
-  
-  # Make the supplemental bubble plot with all 50 pathays
-  data$Celltype <- gsub("CAFs MSC ", "", data$Celltype)
-  data$Celltype <- gsub("CAFs ", "", data$Celltype)
-  data$Celltype <- gsub(" SC", "", data$Celltype)
-  data$Celltype <- gsub("Endothelial ", "", data$Celltype)
-  data$Celltype <- gsub(" cells", "", data$Celltype)
-  data$Celltype <- gsub("-cells", "", data$Celltype)
-  data$Celltype <- gsub("_", " ", data$Celltype)
-  
-  data$Celltype <- factor(data$Celltype, levels=c("B Memory", "B Naive", "Plasmablasts",
-                                                  "iCAF-like", "myCAF-like", "Cancer Basal",
-                                                  "Cancer Her2", "Cancer LumA", "Cancer LumB", 
-                                                  "Cancer Cycling",
-                                                  "Luminal Progenitors", "Mature Luminal", "Myoepithelial",
-                                                  "ACKR1", "CXCL12",
-                                                  "Lymphatic LYVE1", "RGS5",
-                                                  "DCs", "Macrophage", "Monocyte", "Cycling Myeloid",
-                                                  "PVL Differentiated",
-                                                  "PVL Immature", "Cycling PVL", "NK", "NKT", "T CD4+", "T CD8+",
-                                                  "Cycling T"))
-  
-  r <- ggplot(data, mapping = aes(x = Celltype,
-                                  y= Pathway, size=abs)) +
-    geom_point(alpha = 1, aes(fill = Enrich_Score), pch = 21
-    ) +  scale_fill_gradientn(colours = c("blue","white","red"), limits = c(max*-1, max))+
-    labs(
-      size = "Magnitude GSEA Cor.",
-      fill = "GSEA NES",
-      x = "",
-      y = "") +
-    
-    guides(colour = guide_legend(order = 1),
-           size = guide_legend(order = 2)) +
-    scale_shape_identity() +
-    theme(axis.text.x = element_text(size = 6, angle = 90, hjust=1, vjust = 1)) +
-    theme(axis.text.y = element_text(size = 8))+
-    theme(legend.position = "right")+
-    theme(legend.key.size = unit(0.3, 'cm'))+
-    scale_size(range = c(0, 2))
-  
-  ggsave(paste0(subtype_str, "_all.pdf"), r, device = "pdf", height = 8, width = 6.5)
-  
 }
 
 setwd("/Users/addie/desktop")

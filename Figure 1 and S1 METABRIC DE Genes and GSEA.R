@@ -16,14 +16,14 @@ library(ggpubr)
 library(dplyr)
 library(ggrepel)
 
-# First, load in the METABRIC clinical data and format
-clin_metabric <- read.table("/Users/addie/Dropbox (Partners HealthCare)/Single-cell_breast_cancer/AnalysisAdrienne/Cibersort input data/brca_metabric/data_clinical_patient.txt",
+# First, load in the METABRIC clinical data and format, downloaded from cBioPortal: https://www.cbioportal.org/study/summary?id=brca_metabric
+clin_metabric <- read.table("<YOUR DATA PATH>/data_clinical_patient.txt",
                             sep = "\t")
 colnames(clin_metabric) <- clin_metabric[1,]
 clin_metabric <- clin_metabric[-1,]
 
-# Load in the clinical samples data to get stage and format
-clin_sample <- read.table("/Users/addie/Dropbox (Partners HealthCare)/Single-cell_breast_cancer/AnalysisAdrienne/Cibersort input data/brca_metabric/data_clinical_sample.txt",
+# Load in the clinical samples data to get stage and format, also downloaded from cBioPortal: https://www.cbioportal.org/study/summary?id=brca_metabric
+clin_sample <- read.table("<YOUR DATA PATH>/data_clinical_sample.txt",
                           sep = "\t")
 colnames(clin_sample) <- clin_sample[1,]
 clin_sample <- clin_sample[-1,]
@@ -84,13 +84,13 @@ ER_old <- rbind(ER_hp_old, ER_lp_old)
 rm("ER_hp_old", "ER_lp_old", "ER_hp_young", "ER_lp_young")
 
 # Read in and format the gene expression data for TNBC and ER+
-# THESE DATA ARE TOO LARGE FOR GITHUB
-TNBC <- read.csv("/Users/addie/Dropbox (Partners HealthCare)/Single-cell_breast_cancer/Data_METABRIC/2024_METABRIC_TNBC.csv")
+# THESE DATA ARE TOO LARGE FOR GITHUB; these are the resultant files from "METABRIC data wrangling.R"
+TNBC <- read.csv("<YOUR DATA PATH>/2024_METABRIC_TNBC.csv")
 rownames(TNBC) <- TNBC[,1]
 TNBC <- TNBC[,-1]
 
 
-ER <- read.csv("/Users/addie/Dropbox (Partners HealthCare)/Single-cell_breast_cancer/Data_METABRIC/2024_METABRIC_ER.csv")
+ER <- read.csv("<YOUR DATA PATH>/2024_METABRIC_ER.csv")
 rownames(ER) <- ER[,1]
 ER <- ER[,-1]
 
@@ -214,7 +214,7 @@ top.table_TNBC <- topTable(tmp, sort.by = "logFC", n = Inf)
 rm("df2", "df3", "fit", "mm", "tmp", "y", "d0")
 
 # Plotting
-setwd("/Users/addie/desktop")
+setwd("<YOUR DATA PATH>")
 
 # For the two results tables:
 
@@ -261,9 +261,9 @@ for(df in c("top.table_ER", "top.table_TNBC")){
   ggsave(paste0(df, "_volcano2.pdf"), volcano, device = "pdf", height = 6, width = 12)
 }
 
-# Running GSEA on results
-setwd("/Users/addie/desktop/GSEA/gmts")
-gmts <- list.files("/Users/addie/desktop/GSEA/gmts")
+# Running GSEA on results; gmt files obtained from this link: https://www.gsea-msigdb.org/gsea/msigdb/human/collections.jsp
+setwd("<YOUR DATA PATH>/gmts")
+gmts <- list.files("<YOUR DATA PATH>/gmts")
 gmts <- gmts[-grep(".csv", gmts)]
 
 # For the ER+ and TNBC results:
@@ -301,18 +301,18 @@ for(res in c("top.table_ER", "top.table_TNBC")){
 }
 
 
-setwd("/users/addie/desktop")
+setwd("<YOUR DATA PATH>")
 # Order the significant TNBC GSEA results by decreasing NES and write to computer
 sig_gsea_TNBC <- sig_gsea_TNBC[order(sig_gsea_TNBC$NES, decreasing = T),]
 sig_gsea_TNBC <- sig_gsea_TNBC[,-c("size", "leadingEdge")]
 sig_gsea_TNBC2 <- apply(sig_gsea_TNBC,2,as.character)
-write.csv(sig_gsea_TNBC2, file = "20240507_TNBC_GSEA_inclStageIII.csv", quote = F, row.names = F)
+write.csv(sig_gsea_TNBC2, file = "TNBC_GSEA_inclStageIII.csv", quote = F, row.names = F)
 
 # Repeat for ER+
 sig_gsea_ER <- sig_gsea_ER[order(sig_gsea_ER$NES, decreasing = T),]
 sig_gsea_ER <- sig_gsea_ER[,-c("size", "leadingEdge")]
 sig_gsea_ER2 <- apply(sig_gsea_ER,2,as.character)
-write.csv(sig_gsea_ER2, file = "20240507_ER_GSEA_inclStageIII.csv", quote = F, row.names = F)
+write.csv(sig_gsea_ER2, file = "ER_GSEA_inclStageIII.csv", quote = F, row.names = F)
 
 # Manually curate lists of significant pathways that are functionally or biologically similar
 ER_BC <- c(
@@ -480,7 +480,7 @@ setdiff(sig_gsea_TNBC$pathway, c(TNBC_BC, TNBC_DiseaseSignaling, TNBC_Immune, TN
 setdiff(c(TNBC_BC, TNBC_DiseaseSignaling, TNBC_Immune, TNBC_Misc, TNBC_OtherCancer, TNBC_RegulatoryNetworks), sig_gsea_TNBC$pathway)
 
 # Visualize for TNBC
-setwd("/Users/addie/desktop/GSEAbubblecharts/TNBC")
+setwd("<YOUR DATA PATH>/TNBC")
 for(pathways in c("TNBC_BC", "TNBC_DiseaseSignaling", "TNBC_Immune", "TNBC_Misc", "TNBC_OtherCancer", "TNBC_RegulatoryNetworks")){
   # Get the list of pathway names to plot
   ls <- get(pathways)
@@ -550,7 +550,7 @@ ggsave("TNBC_GSEA.pdf", q, height = 20, width = 9)
 
 
 # Repeat for ER+ data
-setwd("/Users/addie/desktop/GSEAbubblecharts/ER")
+setwd("<YOUR DATA PATH>/ER")
 
 for(pathways in c("ER_BC", "ER_OtherCancer", "ER_RegulatoryAndSignaling", "ER_Misc")){
   # Get the list of pathways to plot
@@ -616,4 +616,4 @@ suppl2 <- data.frame(PATIENT_ID = suppl$PATIENT_ID, AGE_AT_DIAGNOSIS = suppl$AGE
                      THREEGENE = suppl$THREEGENE, TUMOR_STAGE = suppl$TUMOR_STAGE)
 
 setwd("../")
-write.csv(file = "20240430_METABRIC_donortable.csv", suppl2)
+write.csv(file = "METABRIC_donortable.csv", suppl2)

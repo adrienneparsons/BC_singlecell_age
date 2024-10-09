@@ -21,6 +21,7 @@ library(ComplexHeatmap)
 # Also available at GEO Accession # GSE176078
 
 data_path <- "<YOUR DATA PATH>"
+options(Seurat.object.assay.version = "v5")
 
 # Function to recursively read scRNAseq data using read10x and create seurat objects including metadata
 datasheet <- "metadata.csv"

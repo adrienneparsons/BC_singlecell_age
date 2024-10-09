@@ -13,9 +13,9 @@ library(gtools)
 # Load the cellchat objects previously generated
 
 data_path <- "<YOUR DATA PATH>"
-
+options(Seurat.object.assay.version = "v5")
 #--------------------------------------------------------------------------------------------------------------------------------
-# TNBC
+# TNBC, results from "Create CellChat Objects.R"
 cellchatTNBC.young <- readRDS(paste0(data_path,"/cellchatTN.young_computeCommunProb_psize_TRUE.Rdata"))
 cellchatTNBC.old <- readRDS(paste0(data_path,"/cellchatTN.old_computeCommunProb_psize_TRUE.Rdata"))
 object.list <- list(TNBC.young = cellchatTNBC.young, TNBC.old = cellchatTNBC.old)
@@ -30,7 +30,7 @@ object.list <- lapply(object.list, function(x) aggregateNet(x))
 # Merge CellChat object of each dataset together
 cellchatTNBC <- mergeCellChat(object.list, add.names = names(object.list))
 
-# ER
+# ER, results from "Create CellChat Objects.R"
 cellchatER.young <- readRDS(paste0(data_path,"/cellchatER.young_computeCommunProb_psize_TRUE.Rdata"))
 cellchatER.old <- readRDS(paste0(data_path,"/cellchatER.old_computeCommunProb_psize_TRUE.Rdata"))
 object.list <- list(ER.young = cellchatER.young, ER.old = cellchatER.old)

@@ -2,7 +2,6 @@
 ###########################################################
 # Adrienne Parsons, 2024-05-30
 
-
 # Prerequisites -----------------------------------------------------------------------------------
 library(tidyverse)
 library(data.table)
@@ -17,7 +16,7 @@ library(ggplot2)
 library(ggforce)
 
 # Set up ------------------------------------------------------------------------------------------
-setwd("/Users/addie/Dropbox (Personal)/Single-cell_breast_cancer/AnalysisAdrienne")
+setwd("<YOUR DATA PATH>")
 #setwd("~/DropboxMGB/Projects/Single-cell_breast_cancer/AnalysisAdrienne") # for Peter
 rm(list=ls())
 
@@ -26,10 +25,10 @@ cutf <- function(x, f=1, d="/") sapply(strsplit(x, d), function(i) paste(i[f], c
 
 # Load data ---------------------------------------------------------------------------------------
 
-# Load supplemental table
-sup.tib <- read_excel("../Data_Swarbrick/wu,swarbrick2021 - Supplement.xlsx", skip = 3)
+# Load supplemental table, downloaded from here: https://www.nature.com/articles/s41588-021-00911-1#Sec39
+sup.tib <- read_excel("./wu,swarbrick2021 - Supplement.xlsx", skip = 3)
 
-# Load expression and metadata
+# Load expression and metadata, downloaded from GEO: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE176078
 folders <- list.files("../Data_Swarbrick", full.names = T)
 folders <- folders[!grepl("xlsx", folders)]
 data.tib <- tibble(Sample = cutf(folders, d = "/", f = 3),
@@ -91,7 +90,7 @@ seu.ER <- NormalizeData(seu.ER)
 # Set the Idents to the celltype to plot by cell type
 Idents(seu.ER) <- "celltype_minor"
 
-setwd("/Users/addie/desktop")
+setwd("<YOUR RESULTS PATH>")
 
 # Get the ER+ data for ESR1 and format the cell types in a new data frame
 esr1_data <- GetAssayData(seu.ER, slot = "data") %>% .["ESR1", ]
@@ -149,7 +148,7 @@ seu.TNBC <- NormalizeData(seu.TNBC)
 Idents(seu.TNBC) <- "celltype_minor"
 
 
-setwd("/Users/addie/desktop")
+setwd("<YOUR RESULTS PATH>")
 
 # For the MHC genes of interest that are present in the dataset:
 for(feature in c("HLA-DRB1", "HLA-DRB5", "HLA-DRA", "HLA-DQA1", "HLA-DQB1", "HLA-DOB", 

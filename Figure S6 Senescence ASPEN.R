@@ -16,7 +16,9 @@ library(fgsea)
 library(ggplot2)
 
 # Set up ------------------------------------------------------------------------------------------
-setwd("/Users/addie/Dropbox (Personal)/Single-cell_breast_cancer/AnalysisAdrienne")
+options(Seurat.object.assay.version = "v4")
+
+setwd("<YOUR DATA PATH>")
 #setwd("~/DropboxMGB/Projects/Single-cell_breast_cancer/AnalysisAdrienne") # for Peter
 rm(list=ls())
 
@@ -25,10 +27,10 @@ cutf <- function(x, f=1, d="/") sapply(strsplit(x, d), function(i) paste(i[f], c
 
 # Load data ---------------------------------------------------------------------------------------
 
-# Load supplemental table
-sup.tib <- read_excel("../Data_Swarbrick/wu,swarbrick2021 - Supplement.xlsx", skip = 3)
+# Load supplemental table, found at this link: https://www.nature.com/articles/s41588-021-00911-1#Sec39
+sup.tib <- read_excel("/wu,swarbrick2021 - Supplement.xlsx", skip = 3)
 
-# Load expression and metadata
+# Load expression and metadata, downloaded from GEO: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE176078
 folders <- list.files("../Data_Swarbrick", full.names = T)
 folders <- folders[!grepl("xlsx", folders)]
 data.tib <- tibble(Sample = cutf(folders, d = "/", f = 3),
@@ -76,7 +78,8 @@ colnames(age_matrix) <- "age"
 
 # GSEA analysis
 # Set the working directory and import the GSEA file for analysis
-setwd("/Users/addie/Desktop/GSEA/gmts")
+# gmts can be downloaded here: https://www.gsea-msigdb.org/gsea/msigdb/human/collections.jsp
+setwd("<YOUR DATA PATH>/gmts")
 GO_fileC2 <- "c2.all.v2023.2.Hs.symbols.gmt"
 GO_fileC5 <- "c5.all.v2023.2.Hs.symbols.gmt"
 senescence_genesets <- c("REACTOME_SENESCENCE_ASSOCIATED_SECRETORY_PHENOTYPE_SASP",
@@ -589,7 +592,6 @@ for(pathway in unique(data_master_ER$Pathway)){
 # Bubble plotting function
 bubble_plotting <- function(data, subtype_str){
   
-  # Make the supplemental bubble plot with all 50 pathays
   data$Celltype <- gsub("CAFs MSC ", "", data$Celltype)
   data$Celltype <- gsub("CAFs ", "", data$Celltype)
   data$Celltype <- gsub(" SC", "", data$Celltype)
@@ -633,12 +635,12 @@ bubble_plotting <- function(data, subtype_str){
     theme(legend.key.size = unit(0.3, 'cm'))+
     scale_size(range = c(0, 2))
   
-  ggsave(paste0(subtype_str, "_20240520_senescence.pdf"), p, device = "pdf",
+  ggsave(paste0(subtype_str, "_senescence.pdf"), p, device = "pdf",
          height = 3, width = 12, units = "in")
 }
 
-setwd("/Users/addie/desktop")
+setwd("<YOUR RESULTS PATH>")
 
-# Run the bubble plotting funtions
+# Run the bubble plotting functions
 bubble_plotting(data_master_TNBC, "TNBC")
 bubble_plotting(data_master_ER, "ER+")

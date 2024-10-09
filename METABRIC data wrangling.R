@@ -5,10 +5,10 @@
 # load packages
 library(tidyverse)
 
-# read in the raw data from METABRIC, acquired from cBioPortal
-clinical_data <- read.table("/Users/addie/Dropbox (Partners HealthCare)/Single-cell_breast_cancer/Data_METABRIC/brca_metabric/data_clinical_patient.txt",
+# read in the raw data from METABRIC, acquired from cBioPortal (https://www.cbioportal.org/study/summary?id=brca_metabric)
+clinical_data <- read.table("<YOUR DATA PATH>/data_clinical_patient.txt",
                             sep = "\t")
-transcript_data <- read_excel("/Users/addie/Dropbox (Partners HealthCare)/Single-cell_breast_cancer/Data_METABRIC/brca_metabric/data_mrna_agilent_microarray.xlsx")
+transcript_data <- read_excel("<YOUR DATA PATH>/data_mrna_agilent_microarray.xlsx")
 
 # Format the data a little so that the first row of the table is the
 # column names

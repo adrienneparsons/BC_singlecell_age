@@ -17,8 +17,9 @@ library(ggplot2)
 library(ggpubr)
 
 # Set up ------------------------------------------------------------------------------------------
-setwd("/Users/addie/Dropbox (Personal)/Single-cell_breast_cancer/AnalysisAdrienne")
-#setwd("~/DropboxMGB/Projects/Single-cell_breast_cancer/AnalysisAdrienne") # for Peter
+options(Seurat.object.assay.version = "v4")
+
+setwd("<YOUR DATA PATH>")
 rm(list=ls())
 
 # Function to split character string
@@ -26,11 +27,11 @@ cutf <- function(x, f=1, d="/") sapply(strsplit(x, d), function(i) paste(i[f], c
 
 # Load data ---------------------------------------------------------------------------------------
 
-# Load supplemental table
-sup.tib <- read_excel("../Data_Swarbrick/wu,swarbrick2021 - Supplement.xlsx", skip = 3)
+# Load supplemental table, obtained here: https://www.nature.com/articles/s41588-021-00911-1#Sec39
+sup.tib <- read_excel("<YOUR DATA PATH>/wu,swarbrick2021 - Supplement.xlsx", skip = 3)
 
-# Load expression and metadata
-folders <- list.files("../Data_Swarbrick", full.names = T)
+# Load expression and metadata, downloaded from here: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE176078
+folders <- list.files("<YOUR DATA PATH>", full.names = T)
 folders <- folders[!grepl("xlsx", folders)]
 data.tib <- tibble(Sample = cutf(folders, d = "/", f = 3),
                    Folder = folders)
@@ -74,7 +75,7 @@ colnames(age_matrix) <- "age"
 
 # TNBC Proportion analysis
 # New Working Directory
-setwd("/Users/addie/desktop/proportions 2/TNBC")
+setwd("<YOUR RESULTS PATH>/TNBC")
 
 # minor to the TNBC donors and add ages to metadata
 seu.TNBC <- subset(seu.all, subset = subtype == "TNBC")
@@ -174,7 +175,7 @@ for(type in unique(seu.TNBC$celltype_major)){
     
 
 # Change working directory for ER+
-setwd("/Users/addie/desktop/proportions 2/ER")
+setwd("<YOUR RESULTS PATH>/ER")
 
 # subset the data to just be the ER+ donors and add donors ages to Seurat object metadata
 seu.ER <- subset(seu.all, subset = subtype == "ER+")

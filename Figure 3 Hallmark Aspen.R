@@ -17,8 +17,10 @@ library(ggplot2)
 library(ggpubr)
 
 # Set up ------------------------------------------------------------------------------------------
-setwd("/Users/addie/Dropbox (Personal)/Single-cell_breast_cancer/AnalysisAdrienne")
-#setwd("~/DropboxMGB/Projects/Single-cell_breast_cancer/AnalysisAdrienne") # for Peter
+# Ensure proper version of Seurat
+options(Seurat.object.assay.version = "v4")
+
+setwd("<YOUR DATA PATH>")
 rm(list=ls())
 
 # Function to split character string
@@ -26,11 +28,11 @@ cutf <- function(x, f=1, d="/") sapply(strsplit(x, d), function(i) paste(i[f], c
 
 # Load data ---------------------------------------------------------------------------------------
 
-# Load supplemental table
-sup.tib <- read_excel("../Data_Swarbrick/wu,swarbrick2021 - Supplement.xlsx", skip = 3)
+# Load supplemental table, from manuscript supplementary info, found at link: https://www.nature.com/articles/s41588-021-00911-1#Sec39
+sup.tib <- read_excel("<YOUR DATA PATH>/wu,swarbrick2021 - Supplement.xlsx", skip = 3)
 
-# Load expression and metadata
-folders <- list.files("../Data_Swarbrick", full.names = T)
+# Load expression and metadata, downloaded from GEO: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE176078
+folders <- list.files("<YOUR DATA PATH>", full.names = T)
 folders <- folders[!grepl("xlsx", folders)]
 data.tib <- tibble(Sample = cutf(folders, d = "/", f = 3),
                    Folder = folders)
@@ -101,7 +103,7 @@ GSEA <- function(gene_list, GO_file, pval) {
     dplyr::filter(padj < !!pval)
   if(dim(fgRes)[1]!=0){
     
-    ## Filter FGSEA by using gage results. Must be significant and in same direction to keep 
+    # Filter FGSEA by using gage results. Must be significant and in same direction to keep 
     print("running gage")
     gaRes = gage::gage(gene_list, gsets=myGO, same.dir=TRUE, set.size =c(15,600))
     
@@ -409,7 +411,8 @@ subset_masterdata <- function(subtype_str){
     } 
   
   # Set the working directory and import the GSEA file for analysis
-  setwd("/Users/addie/Desktop/GSEA/")
+  # gmt file found in Data folder on GitHub or at: https://www.gsea-msigdb.org/gsea/msigdb/human/collections.jsp
+  setwd("<YOUR DATA PATH>")
   GO_file <- "h.all.v7.4.symbols.gmt"
   
   # Run GSEA
@@ -566,7 +569,7 @@ for(i in 1:nrow(`ER+_pvals`)){
                            data_master_ER3$Enrich_Score == `ER+_pvals`$NES[i]] <- `ER+_pvals`$value[i]
 }
 
-setwd("/Users/addie/desktop")
+setwd("<YOUR RESULTS PATH>")
 write.csv(data_master_TNBC3, file = "TNBC_ASPENResults.csv", row.names = F, quote = F)
 write.csv(data_master_ER3, file = "ER_ASPENResults.csv", row.names = F, quote = F)
 
@@ -676,54 +679,13 @@ bubble_plotting <- function(data, subtype_str, max){
                        length(hallmark_list[["Miscellaneous"]]) + 8
                      ), font.label = list(size = 8) 
                    ) 
-    ggsave(paste0(subtype_str, "_20230328_final.pdf"), q, device = "pdf",
+    ggsave(paste0(subtype_str, "_final.pdf"), q, device = "pdf",
            height = 7, width = 5, units = "in")
     
-    # Make the supplemental bubble plot with all 50 pathays
-    data$Celltype <- gsub("CAFs MSC ", "", data$Celltype)
-    data$Celltype <- gsub("CAFs ", "", data$Celltype)
-    data$Celltype <- gsub(" SC", "", data$Celltype)
-    data$Celltype <- gsub("Endothelial ", "", data$Celltype)
-    data$Celltype <- gsub(" cells", "", data$Celltype)
-    data$Celltype <- gsub("-cells", "", data$Celltype)
-    data$Celltype <- gsub("_", " ", data$Celltype)
-    
-    data$Celltype <- factor(data$Celltype, levels=c("B Memory", "B Naive", "Plasmablasts",
-                                                                "iCAF-like", "myCAF-like", "Cancer Basal",
-                                                                "Cancer Her2", "Cancer LumA", "Cancer LumB", 
-                                                                "Cancer Cycling",
-                                                                "Luminal Progenitors", "Mature Luminal", "Myoepithelial",
-                                                                "ACKR1", "CXCL12",
-                                                                "Lymphatic LYVE1", "RGS5",
-                                                                "DCs", "Macrophage", "Monocyte", "Cycling Myeloid",
-                                                                "PVL Differentiated",
-                                                                "PVL Immature", "Cycling PVL", "NK", "NKT", "T CD4+", "T CD8+",
-                                                                "Cycling T"))
-    
-    r <- ggplot(data, mapping = aes(x = Celltype,
-                                          y= Pathway, size=abs)) +
-      geom_point(alpha = 1, aes(fill = Enrich_Score), pch = 21
-      ) +  scale_fill_gradientn(colours = c("blue","white","red"), limits = c(max*-1, max))+
-      labs(
-        size = "Magnitude GSEA Cor.",
-        fill = "GSEA NES",
-        x = "",
-        y = "") +
-      
-      guides(colour = guide_legend(order = 1),
-             size = guide_legend(order = 2)) +
-      scale_shape_identity() +
-      theme(axis.text.x = element_text(size = 6, angle = 90, hjust=1, vjust = 1)) +
-      theme(axis.text.y = element_text(size = 8))+
-      theme(legend.position = "right")+
-      theme(legend.key.size = unit(0.3, 'cm'))+
-      scale_size(range = c(0, 2))
-    
-    ggsave(paste0(subtype_str, "_all.pdf"), r, device = "pdf", height = 8, width = 6.5)
     
 }
 
-setwd("/Users/addie/desktop")
+setwd("<YOUR RESULTS PATH>")
 
 # Run the bubble plotting functions
 bubble_plotting(data_master_TNBC, "TNBC", max = maxboth)
