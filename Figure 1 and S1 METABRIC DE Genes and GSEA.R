@@ -2,7 +2,7 @@
 ###########################################################
 # Adrienne Parsons, 2024-05-07
 
-# Get the DE genes between early and late recurrence donors and old and young in METABRIC
+# Get the DE genes between old and young ER+ and TNBC donors in METABRIC
 # for disease subtype, then run GSEA
 
 # Prerequisite packages
