@@ -17,11 +17,6 @@ library(ggpubr)
 library(dplyr)
 library(ggrepel)
 
-# FOR DEMO ONLY: Un-comment the below lines and then skip lines 90-100 and 324-617
-#setwd("<YOUR DATA PATH>")
-#load("metabric_demodata.Rdata")
-
-
 # First, load in the METABRIC clinical data and format, downloaded from cBioPortal: https://www.cbioportal.org/study/summary?id=brca_metabric
 clin_metabric <- read.table("<YOUR DATA PATH>/data_clinical_patient.txt",
                             sep = "\t")
