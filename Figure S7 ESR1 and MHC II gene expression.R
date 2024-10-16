@@ -29,9 +29,9 @@ cutf <- function(x, f=1, d="/") sapply(strsplit(x, d), function(i) paste(i[f], c
 sup.tib <- read_excel("./wu,swarbrick2021 - Supplement.xlsx", skip = 3)
 
 # Load expression and metadata, downloaded from GEO: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE176078
-folders <- list.files("../Data_Swarbrick", full.names = T)
+folders <- list.files(".", full.names = T)
 folders <- folders[!grepl("xlsx", folders)]
-data.tib <- tibble(Sample = cutf(folders, d = "/", f = 3),
+data.tib <- tibble(Sample = cutf(folders, d = "/", f = 2),
                    Folder = folders)
 
 # Generate empty list 
