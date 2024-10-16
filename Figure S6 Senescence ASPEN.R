@@ -19,7 +19,6 @@ library(ggplot2)
 options(Seurat.object.assay.version = "v4")
 
 setwd("<YOUR DATA PATH>")
-#setwd("~/DropboxMGB/Projects/Single-cell_breast_cancer/AnalysisAdrienne") # for Peter
 rm(list=ls())
 
 # Function to split character string
