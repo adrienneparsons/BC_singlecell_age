@@ -6,7 +6,7 @@
 library(readxl)
 library(ggplot2)
 
-setwd("YOUR DATA PATH")
+setwd("<YOUR DATA DIRECTORY>")
 
 # Read in the ASPEN results and make a box plot of enrichment scores based on molecular subtype
 # These tables are outputs from "Figure 3 Hallmark Aspen.R"
@@ -20,6 +20,7 @@ ASPEN_results <- rbind(TNBC_ASPEN_results, ER_ASPEN_results)
 
 # Subset to just the results with a numerical NES
 ASPEN_results2 <- ASPEN_results[ASPEN_results$Enrich_Score != "NA" & ASPEN_results$Enrich_Score != 0,]
+ASPEN_results2 <- na.omit(ASPEN_results2)
 
 # Plot the boxplot and save
 boxplot <- ggplot(ASPEN_results2, aes(x = Subtype, y = as.numeric(Enrich_Score)))+geom_boxplot(outlier.shape = NA)+

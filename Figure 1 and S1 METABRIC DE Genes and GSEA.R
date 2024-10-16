@@ -84,7 +84,8 @@ ER_old <- rbind(ER_hp_old, ER_lp_old)
 rm("ER_hp_old", "ER_lp_old", "ER_hp_young", "ER_lp_young")
 
 # Read in and format the gene expression data for TNBC and ER+
-# THESE DATA ARE TOO LARGE FOR GITHUB; these are the resultant files from "METABRIC data wrangling.R"
+# These data can be found on FigShare; see README for links
+#these are the resultant files from "METABRIC data wrangling.R"
 TNBC <- read.csv("<YOUR DATA PATH>/2024_METABRIC_TNBC.csv")
 rownames(TNBC) <- TNBC[,1]
 TNBC <- TNBC[,-1]
@@ -304,13 +305,13 @@ for(res in c("top.table_ER", "top.table_TNBC")){
 setwd("<YOUR DATA PATH>")
 # Order the significant TNBC GSEA results by decreasing NES and write to computer
 sig_gsea_TNBC <- sig_gsea_TNBC[order(sig_gsea_TNBC$NES, decreasing = T),]
-sig_gsea_TNBC <- sig_gsea_TNBC[,-c("size", "leadingEdge")]
+sig_gsea_TNBC <- sig_gsea_TNBC[,-c(7,8)]
 sig_gsea_TNBC2 <- apply(sig_gsea_TNBC,2,as.character)
 write.csv(sig_gsea_TNBC2, file = "TNBC_GSEA_inclStageIII.csv", quote = F, row.names = F)
 
 # Repeat for ER+
 sig_gsea_ER <- sig_gsea_ER[order(sig_gsea_ER$NES, decreasing = T),]
-sig_gsea_ER <- sig_gsea_ER[,-c("size", "leadingEdge")]
+sig_gsea_ER <- sig_gsea_ER[,-c(7,8)]
 sig_gsea_ER2 <- apply(sig_gsea_ER,2,as.character)
 write.csv(sig_gsea_ER2, file = "ER_GSEA_inclStageIII.csv", quote = F, row.names = F)
 
@@ -615,5 +616,5 @@ suppl <- clin_metabric[make.names(clin_metabric$PATIENT_ID) %in% c(colnames(ER_o
 suppl2 <- data.frame(PATIENT_ID = suppl$PATIENT_ID, AGE_AT_DIAGNOSIS = suppl$AGE_AT_DIAGNOSIS, 
                      THREEGENE = suppl$THREEGENE, TUMOR_STAGE = suppl$TUMOR_STAGE)
 
-setwd("../")
+setwd("<YOUR RESULTS DIRECTORY>")
 write.csv(file = "METABRIC_donortable.csv", suppl2)

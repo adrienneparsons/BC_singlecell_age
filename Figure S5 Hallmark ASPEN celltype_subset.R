@@ -33,7 +33,7 @@ sup.tib <- read_excel("./wu,swarbrick2021 - Supplement.xlsx", skip = 3)
 # Load expression and metadata
 folders <- list.files(".", full.names = T)
 folders <- folders[!grepl("xlsx", folders)]
-data.tib <- tibble(Sample = cutf(folders, d = "/", f = 3),
+data.tib <- tibble(Sample = cutf(folders, d = "/", f = 2),
                    Folder = folders)
 
 # Generate empty list 

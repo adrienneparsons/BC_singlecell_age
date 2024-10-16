@@ -29,12 +29,12 @@ cutf <- function(x, f=1, d="/") sapply(strsplit(x, d), function(i) paste(i[f], c
 # Load data ---------------------------------------------------------------------------------------
 
 # Load supplemental table, from manuscript supplementary info, found at link: https://www.nature.com/articles/s41588-021-00911-1#Sec39
-sup.tib <- read_excel("<YOUR DATA PATH>/wu,swarbrick2021 - Supplement.xlsx", skip = 3)
+sup.tib <- read_excel("./wu,swarbrick2021 - Supplement.xlsx", skip = 3)
 
 # Load expression and metadata, downloaded from GEO: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE176078
-folders <- list.files("<YOUR DATA PATH>", full.names = T)
+folders <- list.files(".", full.names = T)
 folders <- folders[!grepl("xlsx", folders)]
-data.tib <- tibble(Sample = cutf(folders, d = "/", f = 3),
+data.tib <- tibble(Sample = cutf(folders, d = "/", f = 2),
                    Folder = folders)
 
 # Generate empty list 
