@@ -652,7 +652,7 @@ bubble_plotting <- function(data, subtype_str, max){
          height = 7, width = 5, units = "in")
 }
 
-setwd("/Users/addie/desktop")
+setwd("<YOUR RESULTS PATH>")
 
 # Run the bubble plotting funtions
 bubble_plotting(data_master_TNBC, "TNBC", max = maxboth)
