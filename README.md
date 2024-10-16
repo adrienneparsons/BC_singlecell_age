@@ -14,8 +14,15 @@ https://figshare.com/articles/dataset/2024_METABRIC_ER_csv/27242256?file=4983452
 
 All analyses are completed in R v4.4.1 and can be completed on a local machine. Both Seurat v4 and v5 are needed for different parts of the scripts. The version required for each R file is noted in the file’s comments.
 
+### Demo instructions
+1. Skip the files "METABRIC data wrangling.R" and "Create CellChat Objects.R"; the data created from these scripts is provided in the Data folder in the repository.
+2. Be sure to update the lines of code to include your data file directory and results file directory where indicated.
+3. The single-cell data can be downloaded on GEO; accession number GSE176078
+
 ### Running the scripts
 #### METABRIC data wrangling and Figures 1 and S1
+Runtime using full dataset: 1 minute, 30 seconds
+
 Using the “data_clinical_patient.txt” and “data_clinical_sample.txt” files on cBioPortal or copied into this repository, as well as the raw data from cBioPortal, the “METABRIC data wrangling.R” file subsets the large gene expression files by molecular subtype (ER+ or TNBC) and removes duplicate genes. This script takes >30 minutes to complete; for ease, we have made the outputs of this script available on FigShare:
 
  TNBC: https://figshare.com/articles/dataset/2024_METABRIC_TNBC_csv/27242253?file=4983452
@@ -34,11 +41,15 @@ The highly variable genes are then ranked by fold change difference (highest pos
 Table outputs include the donor metadata used for the analysis, as well as the DE gene expression analysis results for TNBC and ER+.
 
 ### Figures S2 and S3, Proportion age analysis
+Runtime using full dataset: 4 minutes, 35 seconds
+
 Using the single cell atlas’s cell type annotations of multiple granularities, the “Figure S2 and S3 Proportion Age Analysis.R” file assesses cell type composition with age. It generates stacked bar charts of each minor cell type (celltype_minor) as a proportion of each major cell type (celltype_major), for each donor, and orders the donors on the x-axis by age. For additional ease of interpretation, scatterplots of donor age vs. proportion for each minor cell type are generated and Pearson Correlation testing is done to test for significant associations between proportion values and age.
 
 <img src="/www/Proportions.png" alt="proportions example" width="250"/>
 
 ### Figures 3, S4, S5, and S6, ASPEN
+Runtime using full dataset: 59 minutes
+
 We developed ASPEN (Age-Specific Program ENrichment) as a means of identifying pathways or gene programs that are enriched with older or younger age in the single-cell atlas data. The details of ASPEN’s functions can be found in the comments of “Figure 3 Hallmark Aspen.R” and the associated manuscript. Briefly, Seurat objects for each donor are subsetted by celltype_minor. For each cell type, the average gene expression of every gene is calculated, and these averages are correlated to donor age (n = 10 for TNBC, n = 11 for ER+), and genes are then ranked by correlation coefficient. Genes with a 0 coefficient are removed to avoid erroneous ranking, and GSEA is performed. Second, Seurat signature scoring commands are used to assign a signature score for each pathway of interest to Seurat objects containing all TNBC or ER+ donors; these scored objects are then further subsetted to find the average signature score per cell type per donor. For each cell type, these scores are correlated to donor age. The results from both analyses are then visualized in a bubble plot:
 
 ![Hallmark Pathway ASPEN.](/www/Hallmark_ASPEN.png)
@@ -54,6 +65,8 @@ ASPEN can be used to assess age associations of any pathway found on MSigDB and 
 ![Senescence ASPEN.](/www/Senescence.png)
 
 ### Cellchat object creation and Figure 4, CellChat interactome analysis
+Runtime using full dataset: 2 minutes, 45 seconds
+
 To better understand the activity of specific cell types within young and aged breast tumor microenvironments, these scripts utilized the package CellChat (Jin et al. Nature Communications, 2021). First, CellChat objects are generated from the single-cell atlas in the file “Create CellChat Objects.R”. The objects created include all ER+ donors, all TNBC donors, then all ER+ donors ≤55, all ER+ >55, all TNBC donors ≤55, and all TNBC donors >55. Because these samples are unsorted, we set the argument computeCommunProb() to be TRUE. This script takes >60 minutes to run, so for ease of replication, we have included the resulting CellChat objects used in downstream analyses in the Data folder of this repository.
 
 Once the CellChat objects are made or obtained from the Data folder, the script uses the standard CellChat pipeline to examine cell type to cell type interactions broadly. First, it infers the communication networks between major cell populations (celltype_major) and generate circle plots for the TNBC old and young, then ER+ old and young populations, and then within subtype a differential signaling network to show differences in interactome with age is generated. In these plots, red edges indicate enrichment in the older age group, while blue edges indicate enrichment in the younger group.
@@ -69,11 +82,15 @@ Finally, to visualize the age-associated differences in celltype_minor to cellty
 ![Heatmaps.](/www/heatmaps.png)
 
 ### Figure S7, Assessment of ESR1 and MHCII genes by cell type in ER+ and TNBC
+Runtime using full dataset: 6 minutes, 15 seconds
+
 In TNBC, the increased macrophage-T cell interactions with age, along with signals of increased MHC-II presentation from the METABRIC analysis suggested an age-associated difference in MHC-II activity. We therefore used the single-cell atlas to examine cell type-specific gene expression of MHC-II genes in TNBC, comparing donors ≤55 and >55. We also examined the cell type-specific expression of ESR1 in ER+ donors following the METABRIC analyses from Figure 1. This analysis is completed using the file “Figure S7 EST1 and MHC II gene expression.R,” which generates sina plots for each gene of interest for each minor cell type (celltype_minor) in donors ≤55 and >55 years.
 
 ![Sina Plots.](/www/sinas.png)
 
 ### Figures 5, 6, S8, S9, and S10, Further CellChat-guided investigation.
+Runtime using full dataset: 7 minutes
+
 The script “Figure 5 6 S8 S9 S10 RankNet and bubble plots.R” completes the analyses done for this manuscript by further investigating the specific pathways through which the cell types are communicating using CellChat commands. As described in the accompanying manuscript, we examined the communication probability differences with age (the numerical values associated with the colors in the CellChat heatmaps) and determined that there were certain cell types of interest within the TNBC and ER+ cohorts. We focused our analyses on these 7 (TNBC) or 8 (ER+) cell types and their interactions with one another. From there, the aim was to identify which signaling pathways these cell types were interacting through, and specifically which ligand-receptor interactions showed enrichment in one of the age cohorts within each subtype.
 
 The script first leads the created CellChat objects and introduces a function used for formatting data tables in downstream analysis. It then uses standard CellChat commands, specifying the senders/receivers of interest, to generate bar charts that show differential enrichment of given pathways within each sender-receiver combination, using the rankNet() function. The pathways identified in each sender/receiver plot are saved, as is the number of times a given pathway from the CellChat database is represented in a plot. 

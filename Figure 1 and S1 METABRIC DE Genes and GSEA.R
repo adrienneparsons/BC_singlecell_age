@@ -2,6 +2,7 @@
 ###########################################################
 # Adrienne Parsons, 2024-05-07
 
+
 # Get the DE genes between old and young ER+ and TNBC donors in METABRIC
 # for disease subtype, then run GSEA
 
@@ -15,6 +16,11 @@ library(fgsea)
 library(ggpubr)
 library(dplyr)
 library(ggrepel)
+
+# FOR DEMO ONLY: Un-comment the below lines and then skip lines 90-100 and 324-617
+#setwd("<YOUR DATA PATH>")
+#load("metabric_demodata.Rdata")
+
 
 # First, load in the METABRIC clinical data and format, downloaded from cBioPortal: https://www.cbioportal.org/study/summary?id=brca_metabric
 clin_metabric <- read.table("<YOUR DATA PATH>/data_clinical_patient.txt",
@@ -119,7 +125,7 @@ var <- var[order(var)]
 plot(1:length(var), var)
 
 # Only run limma on genes with highest stdev
-df3 <- df2[rownames(df2) %in% names(var[23500:length(var)]),]
+df3 <- df2[rownames(df2) %in% names(var[(length(var)-674):length(var)]),]
 
 # exponentiate the data to raw count values (METABRIC is log2 transformed on cBioPortal)
 df3 <- 2^df3
@@ -175,7 +181,7 @@ var <- var[order(var)]
 plot(1:length(var), var)
 
 # Subset the data to just be the genes with the highest spread of expression
-df3 <- df2[rownames(df2) %in% names(var[23500:length(var)]),]
+df3 <- df2[rownames(df2) %in% names(var[(length(var)-674):length(var)]),]
 
 # Exponentiate the data to resemble raw counts (cBioPortal log2-normalizes data)
 df3 <- 2^df3
