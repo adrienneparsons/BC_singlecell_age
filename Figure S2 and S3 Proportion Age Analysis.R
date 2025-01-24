@@ -99,10 +99,42 @@ for(type in unique(seu.TNBC$celltype_major)){
 # The maximum is 5; choose 5 high contrast colors for plotting stacked proportion bar charts
 colors <- c("#9b5de5", "#ff9f1c", "#00bbf9", "#fee440", "#f15bb5")
 
+
+# Initialize data frames for p-value correction
+TNBC_major_ps <- data.frame("celltype" = unique(seu.TNBC$celltype_major),
+                            "p.val" = numeric(length(unique(seu.TNBC$celltype_major))),
+                            "p.adj" = numeric(length(unique(seu.TNBC$celltype_major))))
+TNBC_minor_ps <- data.frame("celltype" = unique(seu.TNBC$celltype_minor),
+                            "p.val" = numeric(length(unique(seu.TNBC$celltype_minor))),
+                            "p.adj" = numeric(length(unique(seu.TNBC$celltype_minor))))
+
 # For each major cell type:
 for(type in unique(seu.TNBC$celltype_major)){
   print(type)
   
+  # Make an empty data frame to populate with proportions and donor ages
+  major_df <- data.frame(matrix(NA, nrow = 2, ncol = length(unique(seu.TNBC$orig.ident))))
+  colnames(major_df) <- unique(seu.TNBC$orig.ident)
+  
+  # For each ident:
+  for(ident in colnames(major_df)){
+    # Get the donor's age
+    major_df[1, ident] <- unique(seu.TNBC@meta.data$Age[seu.TNBC@meta.data$orig.ident == ident])
+    
+    # Get the proportion of that cell type out of all of that donor's cells
+    major_df[2, ident] <- (nrow(seu.TNBC@meta.data[seu.TNBC@meta.data$orig.ident == ident & 
+                                                     seu.TNBC@meta.data$celltype_major == type,]))/
+      (nrow(seu.TNBC@meta.data[seu.TNBC@meta.data$orig.ident == ident,]))
+  }
+  
+  # Correlate the proportions and ages for all donors and exrtact p-value
+  cor.major <- cor.test(as.numeric(major_df[1,]), as.numeric(major_df[2,]))
+  major.p <- cor.major$p.value
+  
+  # Add the p-value to the data frame for later adjustment
+  TNBC_major_ps$p.val[TNBC_major_ps$celltype == type] <- major.p
+  
+  # Minor cell type analysis:
   # subset the seurat object to just be the major cell type
   type_obj <- subset(seu.TNBC, subset = celltype_major == type)
   
@@ -135,7 +167,7 @@ for(type in unique(seu.TNBC$celltype_major)){
         theme(aspect.ratio = 1)
       
       # Save
-      ggsave(paste0(type, "_barchart.pdf"), p_minors, device = "pdf", height = 3, width = 4)
+      #ggsave(paste0(type, "_barchart.pdf"), p_minors, device = "pdf", height = 3, width = 4)
       
       # Generate a variable for the scatter plots
       for_sp <- p_minors$data
@@ -156,9 +188,11 @@ for(type in unique(seu.TNBC$celltype_major)){
           xlab("Age")+
           ylab("Proportion")
         
-        # Print the correlation test
+        # Print the correlation test and store the p-value for adjustment
         data <- for_sp[for_sp$celltype == types,]
         tryCatch({cor <- cor.test(as.numeric(data$name), y = as.numeric(data$prop))
+        minor.p <- cor$p.value
+        TNBC_minor_ps$p.val[TNBC_minor_ps$celltype == types] <- minor.p
           print(types)
           print(cor)
         },
@@ -167,11 +201,15 @@ for(type in unique(seu.TNBC$celltype_major)){
         })
 
         # Save the scatter plot
-        ggsave(paste0("TNBC_", types, "_cor_to_age.pdf"), p, device = "pdf", height = 2, width =2)
+        #ggsave(paste0("TNBC_", types, "_cor_to_age.pdf"), p, device = "pdf", height = 2, width =2)
       }
       
       
-      }
+}
+
+# Correct p-values
+TNBC_major_ps$p.adj <- p.adjust(TNBC_major_ps$p.val, method = "BH")
+TNBC_minor_ps$p.adj <- p.adjust(TNBC_minor_ps$p.val, method = "BH")
     
 
 # Change working directory for ER+
@@ -195,11 +233,42 @@ for(type in unique(seu.ER$celltype_major)){
   print(length(unique(type_obj$celltype_minor)))
 }
 
+# Initialize data frames for p-value correction
+ER_major_ps <- data.frame("celltype" = unique(seu.ER$celltype_major),
+                            "p.val" = numeric(length(unique(seu.ER$celltype_major))),
+                            "p.adj" = numeric(length(unique(seu.ER$celltype_major))))
+ER_minor_ps <- data.frame("celltype" = unique(seu.ER$celltype_minor),
+                            "p.val" = numeric(length(unique(seu.ER$celltype_minor))),
+                            "p.adj" = numeric(length(unique(seu.ER$celltype_minor))))
+
 # For each major cell type:
 for(type in unique(seu.ER$celltype_major)){
   print(type)
   
-  # subset the seurat object to just be the majojr cell type
+  # Make an empty data frame to populate with proportions and donor ages
+  major_df <- data.frame(matrix(NA, nrow = 2, ncol = length(unique(seu.ER$orig.ident))))
+  colnames(major_df) <- unique(seu.ER$orig.ident)
+  
+  # For each ident:
+  for(ident in colnames(major_df)){
+    # Get the donor's age
+    major_df[1, ident] <- unique(seu.ER@meta.data$Age[seu.ER@meta.data$orig.ident == ident])
+    
+    # Get the proportion of that cell type out of all of that donor's cells
+    major_df[2, ident] <- (nrow(seu.ER@meta.data[seu.ER@meta.data$orig.ident == ident & 
+                                                     seu.ER@meta.data$celltype_major == type,]))/
+      (nrow(seu.ER@meta.data[seu.ER@meta.data$orig.ident == ident,]))
+  }
+  
+  # Correlate the proportions and ages for all donors and exrtact p-value
+  cor.major <- cor.test(as.numeric(major_df[1,]), as.numeric(major_df[2,]))
+  major.p <- cor.major$p.value
+  
+  # Add the p-value to the data frame for later adjustment
+  ER_major_ps$p.val[ER_major_ps$celltype == type] <- major.p
+  
+  # Minor cell type analysis:
+  # subset the seurat object to just be the major cell type
   type_obj <- subset(seu.ER, subset = celltype_major == type)
   
   # Make a data frame of minor cell types within that major cell type, populate with the unique minor cell types
@@ -231,9 +300,9 @@ for(type in unique(seu.ER$celltype_major)){
     theme(aspect.ratio = 1)
   
   # Save
-  ggsave(paste0(type, "_barchart.pdf"), p_minors, device = "pdf", height = 3, width = 4)
+  #ggsave(paste0(type, "_barchart.pdf"), p_minors, device = "pdf", height = 3, width = 4)
   
-  # Make a variable for the scatter plots
+  # Generate a variable for the scatter plots
   for_sp <- p_minors$data
   for_sp$prop <- NA
   
@@ -252,9 +321,11 @@ for(type in unique(seu.ER$celltype_major)){
       xlab("Age")+
       ylab("Proportion")
     
-    # Print the correlation test
+    # Print the correlation test and store the p-value for adjustment
     data <- for_sp[for_sp$celltype == types,]
     tryCatch({cor <- cor.test(as.numeric(data$name), y = as.numeric(data$prop))
+    minor.p <- cor$p.value
+    ER_minor_ps$p.val[ER_minor_ps$celltype == types] <- minor.p
     print(types)
     print(cor)
     },
@@ -263,10 +334,15 @@ for(type in unique(seu.ER$celltype_major)){
     })
     
     # Save the scatter plot
-    ggsave(paste0("ER_", types, "_cor_to_age.pdf"), p, device = "pdf", height = 2, width =2)
+    #ggsave(paste0("ER_", types, "_cor_to_age.pdf"), p, device = "pdf", height = 2, width =2)
   }
   
   
 }
+
+# Correct p-values
+ER_major_ps$p.adj <- p.adjust(ER_major_ps$p.val, method = "BH")
+ER_minor_ps$p.adj <- p.adjust(ER_minor_ps$p.val, method = "BH")
+
 
 
