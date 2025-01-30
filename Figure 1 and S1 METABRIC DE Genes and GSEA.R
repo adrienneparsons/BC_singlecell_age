@@ -257,12 +257,13 @@ for(df in c("top.table_ER", "top.table_TNBC")){
   # Write a table of the genes
   dd4 <- arrange(dd3, desc(minuslog10p), desc(logFC))
   dd5 <- dd4[,c("gene", "logFC", "minuslog10p", "P.Value", "adj.P.Val")]
+  assign(paste0(gsub("top.table_", "", df), "_METABRIC"), dd5)
   
-  write.csv(dd5, file = paste0(gsub("top.table_", "", df), "_METABRIC_volcanocoords.csv"), quote = F,row.names = F)
+  #write.csv(dd5, file = paste0(gsub("top.table_", "", df), "_METABRIC_volcanocoords.csv"), quote = F,row.names = F)
 }
 
 # Clear the environment and prepare for GSEA
-rm(list = ls())
+#rm(list = ls())
 #---------------------------------------------------------------------------------------
 wdir <- "<YOUR DATA PATH>"
 # First, load in the TCGA clinical data and format, downloaded from cBioPortal: https://www.cbioportal.org/study/summary?id=brca_tcga_pan_can_atlas_2018
@@ -551,7 +552,9 @@ for(df in c("top.table_ER")){
   dd4 <- arrange(dd3, desc(minuslog10p), desc(logFC))
   dd5 <- dd4[,c("gene", "logFC", "minuslog10p", "P.Value", "adj.P.Val")]
   
-  write.csv(dd5, file = paste0(gsub("top.table_", "", df), "_TCGA_volcanocoords.csv"), quote = F, row.names = F)
+  assign(paste0(gsub("top.table_", "", df), "_TCGA"), dd5)
+  
+  #write.csv(dd5, file = paste0(gsub("top.table_", "", df), "_TCGA_volcanocoords.csv"), quote = F, row.names = F)
 }
 
 # For the TNBC results table:
@@ -582,12 +585,12 @@ for(df in c("top.table_TNBC")){
   # Write a table of the genes
   dd4 <- arrange(dd3, desc(minuslog10p), desc(logFC))
   dd5 <- dd4[,c("gene", "logFC", "minuslog10p", "P.Value", "adj.P.Val")]
-  
-  write.csv(dd5, file = paste0(gsub("top.table_", "", df), "_TCGA_volcanocoords.csv"), quote = F, row.names = F)
+  assign(paste0(gsub("top.table_", "", df), "_TCGA"), dd5)
+  #write.csv(dd5, file = paste0(gsub("top.table_", "", df), "_TCGA_volcanocoords.csv"), quote = F, row.names = F)
 }
 
 # Clear the environment and prepare for GSEA
-rm(list = ls())
+#rm(list = ls())
 
 # Volcano plotting
 setwd("<YOUR RESULTS PATH>")
@@ -598,22 +601,51 @@ METABRIC_TNBC <- read.csv("TNBC_METABRIC_volcanocoords.csv")
 TCGA_ER <- read.csv("ER_TCGA_volcanocoords.csv")
 METABRIC_ER <- read.csv("ER_METABRIC_volcanocoords.csv")
 
+# Check the genes that are significant and overlap between datasets (in the same direction)
+ER_overlaps_up <- as.data.frame(Reduce(intersect, list(METABRIC_ER$gene[METABRIC_ER$adj.P.Val < 0.05 & METABRIC_ER$logFC > 0], TCGA_ER$gene[TCGA_ER$adj.P.Val < 0.05 & TCGA_ER$logFC > 0])))
+TNBC_overlaps_up <- as.data.frame(Reduce(intersect, list(METABRIC_TNBC$gene[METABRIC_TNBC$adj.P.Val < 0.05 & METABRIC_TNBC$logFC > 0], TCGA_TNBC$gene[TCGA_TNBC$P.Value < 0.05 & TCGA_TNBC$logFC > 0])))
+ER_overlaps_down <- as.data.frame(Reduce(intersect, list(METABRIC_ER$gene[METABRIC_ER$adj.P.Val < 0.05 & METABRIC_ER$logFC < 0], TCGA_ER$gene[TCGA_ER$adj.P.Val < 0.05 & TCGA_ER$logFC < 0])))
+TNBC_overlaps_down <- as.data.frame(Reduce(intersect, list(METABRIC_TNBC$gene[METABRIC_TNBC$adj.P.Val < 0.05 & METABRIC_TNBC$logFC < 0], TCGA_TNBC$gene[TCGA_TNBC$P.Value < 0.05 & TCGA_TNBC$logFC < 0])))
+
+# Format and add a direction annotation
+colnames(ER_overlaps_up) <- "gene"
+colnames(ER_overlaps_down) <- "gene"
+colnames(TNBC_overlaps_up) <- "gene"
+colnames(TNBC_overlaps_down) <- "gene"
+ER_overlaps_up$direction <- "Up"
+ER_overlaps_down$direction <- "Down"
+TNBC_overlaps_up$direction <- "Up"
+TNBC_overlaps_down$direction <- "Down"
+
+# Create the final data frames and save
+ER_overlaps <- rbind(ER_overlaps_up, ER_overlaps_down)
+TNBC_overlaps <- rbind(TNBC_overlaps_up, TNBC_overlaps_down)
+write.csv(ER_overlaps, "Figure1_commongenes_ER.csv", row.names = F)
+write.csv(TNBC_overlaps, "Figure1_commongenes_TNBC.csv", row.names = F)
+
 # Add labels to significant and high fold difference data points
 # For METABRIC, take all genes with log fold change >0.5 or <-.5 and padj < 0.05
 METABRIC_TNBC$label <- NA
-METABRIC_TNBC$label[abs(METABRIC_TNBC$logFC) > 0.5 & METABRIC_TNBC$adj.P.Val < 0.05] <- METABRIC_TNBC$gene[abs(METABRIC_TNBC$logFC) > 0.5 & METABRIC_TNBC$adj.P.Val < 0.05]
+METABRIC_TNBC$label[abs(METABRIC_TNBC$logFC) > 0.5 & METABRIC_TNBC$minuslog10p > 1.75] <- METABRIC_TNBC$gene[abs(METABRIC_TNBC$logFC) > 0.5 & METABRIC_TNBC$minuslog10p > 1.75]
 TNBC_labels <- na.omit(METABRIC_TNBC$label)
 
 METABRIC_ER$label <- NA
-METABRIC_ER$label[abs(METABRIC_ER$logFC) > 0.5 & METABRIC_ER$adj.P.Val < 0.05] <- METABRIC_ER$gene[abs(METABRIC_ER$logFC) > 0.5 & METABRIC_ER$adj.P.Val < 0.05]
+METABRIC_ER$label[abs(METABRIC_ER$logFC) > 0.5 & METABRIC_ER$minuslog10p > 7.5] <- METABRIC_ER$gene[abs(METABRIC_ER$logFC) > 0.5 & METABRIC_ER$minuslog10p > 7.5]
 ER_labels <- na.omit(METABRIC_ER$label)
 
-# For TCGA, take the genes that are significant and also in METABRIC's labeled genes
+# Repeat for TCGA
 TCGA_TNBC$label <- NA
-TCGA_TNBC$label[TCGA_TNBC$gene %in% TNBC_labels & TCGA_TNBC$P.Value < 0.05] <- TCGA_TNBC$gene[TCGA_TNBC$gene %in% TNBC_labels & TCGA_TNBC$P.Value < 0.05]
+TCGA_TNBC$label[abs(TCGA_TNBC$logFC) > 0.5 & TCGA_TNBC$minuslog10p > 3.25] <- TCGA_TNBC$gene[abs(TCGA_TNBC$logFC) > 0.5 & TCGA_TNBC$minuslog10p > 3.25]
+TNBC_labels_TCGA <- na.omit(TCGA_TNBC$label)
 
 TCGA_ER$label <- NA
-TCGA_ER$label[TCGA_ER$gene %in% ER_labels & TCGA_ER$adj.P.Val < 0.05 ] <- TCGA_ER$gene[TCGA_ER$gene %in% ER_labels & TCGA_ER$adj.P.Val < 0.05]
+TCGA_ER$label[abs(TCGA_ER$logFC) > 0.5 & TCGA_ER$minuslog10p > 7.5] <- TCGA_ER$gene[abs(TCGA_ER$logFC) > 0.5 & TCGA_ER$minuslog10p > 7.5]
+ER_labels_TCGA <- na.omit(TCGA_ER$label)
+
+# Check overlaps of labeled genes
+Reduce(intersect, list(ER_labels, ER_labels_TCGA))
+Reduce(intersect, list(TNBC_labels, TNBC_labels_TCGA))
+
 
 # Plot
 for(df in c("METABRIC_ER", "METABRIC_TNBC", "TCGA_ER", "TCGA_TNBC")){
