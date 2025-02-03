@@ -104,9 +104,6 @@ colors <- c("#9b5de5", "#ff9f1c", "#00bbf9", "#fee440", "#f15bb5")
 TNBC_major_ps <- data.frame("celltype" = unique(seu.TNBC$celltype_major),
                             "p.val" = numeric(length(unique(seu.TNBC$celltype_major))),
                             "p.adj" = numeric(length(unique(seu.TNBC$celltype_major))))
-TNBC_minor_ps <- data.frame("celltype" = unique(seu.TNBC$celltype_minor),
-                            "p.val" = numeric(length(unique(seu.TNBC$celltype_minor))),
-                            "p.adj" = numeric(length(unique(seu.TNBC$celltype_minor))))
 
 # For each major cell type:
 for(type in unique(seu.TNBC$celltype_major)){
@@ -137,6 +134,10 @@ for(type in unique(seu.TNBC$celltype_major)){
   # Minor cell type analysis:
   # subset the seurat object to just be the major cell type
   type_obj <- subset(seu.TNBC, subset = celltype_major == type)
+  
+  TNBC_minor_ps <- data.frame("celltype" = unique(type_obj$celltype_minor),
+                              "p.val" = numeric(length(unique(type_obj$celltype_minor))),
+                              "p.adj" = numeric(length(unique(type_obj$celltype_minor))))
   
   # Make a data frame of minor cell types within that major cell type, populate with the unique minor cell types
   # and donors' ages as column names
@@ -204,12 +205,17 @@ for(type in unique(seu.TNBC$celltype_major)){
         #ggsave(paste0("TNBC_", types, "_cor_to_age.pdf"), p, device = "pdf", height = 2, width =2)
       }
       
+      # Correct p-values and print results
+      TNBC_minor_ps$p.adj <- p.adjust(TNBC_minor_ps$p.val, method = "BH")
+      print(type)
+      print(TNBC_minor_ps)
+      
       
 }
 
 # Correct p-values
 TNBC_major_ps$p.adj <- p.adjust(TNBC_major_ps$p.val, method = "BH")
-TNBC_minor_ps$p.adj <- p.adjust(TNBC_minor_ps$p.val, method = "BH")
+
     
 
 # Change working directory for ER+
@@ -237,9 +243,7 @@ for(type in unique(seu.ER$celltype_major)){
 ER_major_ps <- data.frame("celltype" = unique(seu.ER$celltype_major),
                             "p.val" = numeric(length(unique(seu.ER$celltype_major))),
                             "p.adj" = numeric(length(unique(seu.ER$celltype_major))))
-ER_minor_ps <- data.frame("celltype" = unique(seu.ER$celltype_minor),
-                            "p.val" = numeric(length(unique(seu.ER$celltype_minor))),
-                            "p.adj" = numeric(length(unique(seu.ER$celltype_minor))))
+
 
 # For each major cell type:
 for(type in unique(seu.ER$celltype_major)){
@@ -270,6 +274,10 @@ for(type in unique(seu.ER$celltype_major)){
   # Minor cell type analysis:
   # subset the seurat object to just be the major cell type
   type_obj <- subset(seu.ER, subset = celltype_major == type)
+  
+  ER_minor_ps <- data.frame("celltype" = unique(type_obj$celltype_minor),
+                            "p.val" = numeric(length(unique(type_obj$celltype_minor))),
+                            "p.adj" = numeric(length(unique(type_obj$celltype_minor))))
   
   # Make a data frame of minor cell types within that major cell type, populate with the unique minor cell types
   # and donors' ages as column names
@@ -337,12 +345,16 @@ for(type in unique(seu.ER$celltype_major)){
     #ggsave(paste0("ER_", types, "_cor_to_age.pdf"), p, device = "pdf", height = 2, width =2)
   }
   
+  # Correct p-values and print results
+  ER_minor_ps$p.adj <- p.adjust(ER_minor_ps$p.val, method = "BH")
+  print(type)
+  print(ER_minor_ps)
   
 }
 
 # Correct p-values
 ER_major_ps$p.adj <- p.adjust(ER_major_ps$p.val, method = "BH")
-ER_minor_ps$p.adj <- p.adjust(ER_minor_ps$p.val, method = "BH")
+
 
 
 
