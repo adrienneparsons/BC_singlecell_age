@@ -1,0 +1,274 @@
+ASPEN Pseudocode
+
+Adrienne Parsons, 2/20/2025
+
+-------------------------------------------------------
+
+LOAD prerequisite packages
+
+SET Seurat assay to v4
+SET working directory
+
+SET cutf FUNCTION creates a vector of character strings separated by a common pattern
+
+READ in supplemental data
+
+list folder names in directory
+SET tibble with donor name and corresponding filepath using cutf FUNCTION
+SET list to populate with donor-specific Seurat Objects
+
+FOR each row of the tibble{
+	PRINT the corresponding donor ID
+	SET folder filepath
+	READ10X the files within the folder to make a counts matrix
+	READ in the metadata csv
+	CreateSeuratObject from counts data and metadata and add to list
+}
+
+SET matrix of ages from supplemental data and add donor IDs
+
+SET GSEA function{ (inputs = gene_list, GO_file, pval)
+	SET seed
+	LOAD prerequiusites
+	IF duplicated gene names{
+	PRINT warning
+	}
+
+	IF gene list not ranked{
+	PRINT warning
+	}
+
+	SET myGO as list of pathways/genes from GO_file
+	SET fgsea results with myGO and gene_list
+
+	IF(fgsea results exist){
+		SET gage resilts with myGO and gene_list
+		SET up-regulated pathways
+		SET down-regulated pathways
+
+		SET pathways significantly up-regulated in both fgsea and gage (pval threshold)
+		SET pathways significantly down-regulated in both gsea and gage (pval threshold)
+		SET all significant results and order by normalized enrichment score (NES)
+
+		IF(there is at least 1 up- or down-regulated pathway){
+			ADD pathway names and enrichment directions to all significant results
+			SET filtered results as top 10 most up- and down-regulated significant pathways by NES
+			SET plotting parameters
+			PLOT top 20 filtered results
+			SET output as results df and plot
+			RETURN output
+			} ELSE(SET results data frame of 0 values for each pathway in myGO
+				   RETURN results data frame)
+
+	} ELSE(SET results data frame of 0 values for each pathway in myGO
+			RETURN results data frame)
+}
+
+SET gene sets from msigdbr
+SET names of pathways of interest
+SET gene sets filtered for pathway name and associated genes
+
+SET signature scoring function (inputs = names of pathways of interest, Seurat object, results df from GSEA function, subtype){
+	SET list of donors in object
+	SET age matrix that only includes donots in list of donors
+
+	FOR(pathway in names of pathways of interest){
+	SET list of associated genes for pathways
+	SET AddModuleScore to signature score the entire Seuurat object
+	SET list of unique cell types found in Seurat object
+	SET final data frame to populate with average signature scores per donor per cell type
+	FOR(donor index in 1:length of donor list){
+			SET empty data frame to populate with average cell type-specific signature scores
+			SET object subsetted for donor name corresponding to donor index
+			SET empty data frame to populate with all the scores from the specified donor
+			SET columns in all score data frame to be celltype names and associated signature score
+			FOR(cell type index in 1:number of unique cell types){
+				SET subset of all score data frame to cell type associated with cell type index
+				SET mean value of signature scores
+				IF(the cell type at cell type index is in donor-specific average cell type-specific score df){
+					ADD mean value to the donor-specific average cell type-specific score df
+				}
+			}
+			ADD average cell type-specific scores to donor-specific average signature scores
+		}
+		ASSIGN pathway-specific results of each donor/cell type combination's average signature score
+	}
+	SET empty data frame to populate with correlation coefficients of donor age to each cell type per pathway
+	SET empty daata frame to populate with p-values for correlations
+	FOR(pathway index in 1:number of pathways){
+		SET pathway-specific results of average signature scores per donor per cell type
+		FOR(cell type index in 1:number of rows in pathway-specific results){
+			TRY to correlate donor age to the average scores for corresponding cell type
+			SET p-value
+			ADD p-value to p-value data frame
+			ADD correlation coefficient to correlation coefficient df
+			IF(error){
+			PRINT warning
+			}
+		}
+	SET empty data frame for adjuted p values for correlations
+	FOR(cell type index in 1:number of cell types){
+	SET list of p-values per cell type
+	SET adjusted p-values
+	ADD adjusted p-value to adjusted p-value data frame
+	}
+	SET transposed gsea_results
+	SET long-format correlation data frame for plotting
+	SET long-format gsea_results
+	SET long-format adjusted p-value data frame
+
+	SET master data frame that includes long-format correlation data frame, long-format gsea_results, long-format adjusted p-values, and abosulte values of correlation coefficients
+	FORMAT pathwat column names
+
+	FOR(cell type in unique cell types in the master data frame){
+		IF(a correlation was not run for that cell type due to too few observations){
+		  SET the enrichment score in master data for that cell type to NA
+		}
+	}
+	FORMAT cell type names in master results data frame
+	RETURN master results data frame
+}
+
+SET subtype-specific master data function(input = subtype string){
+	SET Seurat object where subtype is equal to the subtype string input
+	NormalizeData Seurat object
+	SET donor list for Seurat object
+	SET cell type list
+	SET subset of age matrix to include only donors in Seurat Object
+	FOR(cell type index in 1:number of cell types){
+	SET duplicate subtype-specific age matrix
+	SET empty list to populate with each donor's expression data
+	SET Boolean absence of cells of that type to FALSE
+	FOR(donor ID in Seurat object's unique donors){
+		TRY(to get the Assay data for the specified donor and cell type)
+		if(error){
+			PRINT(warning)
+			SET Boolean absence of cells of that type to TRUE
+			}
+		IF(Boolean absence of cells of that type is TRUE){
+			SET donor's age in duplicate subtype-specigic age matrix to NA
+			SET list element of list to populate with each donor's expression data corresponding to donor's index to NA
+			}	
+		}
+	REMOVE NULL list elements from empty list to populate with each donor's expression data
+	REMOVE NAs from duplicate age matrix
+	IF(more than half of the donor's have expression data for that cell type){
+		SET correlation results to NA and ASSIGN that NA to the environment with cell type and subtype as name
+		} ELSE{
+			SET means of each gene's expression per donor's expression data for that cell type
+			SET data frame including means from all donors for that cell type
+			SET age dupplicate age matrix to just include donors that had expression data
+			SET Correlations of each gene's mean expression to donor age
+			SET NA values in correlations to 0 (will be removed later)
+			SET sorted correlation matrix, sorted from most correlated to most anti-correlated
+			SET numeric vector of sorted correlation coefficients
+			SET names of numeric vector to corresponding gene names
+			SET numeric correlation coefficient veector to only nonzero values in the numeric correlation vector
+			ASSIGN to global environment the numeric correlation vector with cell type and subtype as name
+		  }
+	}
+SET working directory to wher gmt file is stored
+SET GO_file to be gmt of interest
+SET results data frame for GSEA results
+FOR(cell type index in 1:number of cell types){
+	SET temporary placeholder for GSEA function results
+	IF(a numeric correlation vector exists for that cell type){
+		TRY(to run the GSEA function of the numeric correlation vector using the GO_file specified)
+	  IF(error){
+		  PRINT(warning)
+		  SET results to NA
+			}
+		IF(the GSEA results yields a daata frame of significant pathway(s)){
+			SET data frame including cell type, the results including Pathway, NES, and adjusted p-value
+			ADD to results data frame
+			} ELSE(ADD 0 values to results data frame)
+		} ELSE(ADD 0 values to results data frame)
+	}
+FORMAT results data frame
+SET wide-format data frame, filling empty values with NA, excluding the p-values
+SET wide-format data frame, filling empty valuees with NA, invluding the p-values
+SET long-format p-value data frame
+ASSIGN long-format p-value data frame for subtype specified by subtype_string
+SET Boolean of when the results for a given cell type are all NA for every pathway
+SET numeric vector of when Boolean is TRUE
+FOR(index in numeric vector of when Boolean is TRUE){
+	IF(the number of NA values within the indexed row does not equal the total number of pathway-specific columns){
+	  SET index of what columns in that row are NA
+	  SET the element at specified row and NA indices to be 0
+	}
+}
+
+SET GSEA results as numeric matrix for plotting
+SET master data using signature scoring function
+
+FOR(each cell type){
+	Remove the correlation results from the environment
+	}
+RETURN(master data)
+}
+
+SET TNBC master data using subtype-specific master data function
+SET ER+ master daata using subtype-specific master data function
+
+FOR(a given cell type in the Seurat object){
+	remove any remaining numeric correlation vectors
+}
+
+SET maximum value in both sets of master data
+SET empty data frame including column names for master TNBC data
+
+FOR(a pathway in the TNBC master data pathways){
+	IF(the pathway has at least one cell type with a significant GSEA NES value in both ER+ and TNBC){
+	  ADD that pathway's master data to the empty TNBC data frame
+	}
+}
+
+
+SET empty data frame including column names for master ER+ data
+
+FOR(a pathway in the ER+ master data pathways){
+	IF(the pathway has at least one cell type with a significant GSEA NES value in both ER+ and TNBC){
+	  ADD that pathway's master data to the empty ER+ data frame
+	}
+}
+
+SET TNBC master data frame including columns needed for data table
+ADD column for p-values
+FORMAT TNBC_pvals data frame
+FOR(index in 1:number of rows in TNBC_pvals){
+	ADD the adjusted p-value to the appropriate cell type/pathway combination in the data table TNBC data frame
+}
+
+
+SET ER+ master data frame including columns needed for data table
+ADD column for p-values
+FORMAT ER+_pvals data frame
+FOR(index in 1:number of rows in ER+_pvals){
+	ADD the adjusted p-value to the appropriate cell type/pathway combination in the data table ER+ data frame
+}
+
+SET working directory to results path
+WRITE the ASPEN results tables for ER+ and TNBC
+
+SET bubble plotting function(inputs = master dataset, subtype string, and the maximum value for plotting){
+	SET categories of pathways for grouping the plot
+	SET these categorical character vectors to only include pathways present in the EERR+ anf TNBC master data
+	SET a list where these character vectors are the list elements
+	SET names for the list
+
+	FOR(index in 1:the length of the character vector list){
+		SET a data frame that is the masterr data subsetted to only include the pathways in the character vector at that list index
+		FORMAT the data frame's cell type annotations
+		REORDER the data frame's cell type annotations
+		PLOT the data
+		ASSIGN the plot to the environment
+	}
+
+	PLOT all plots into one arranged image
+	SAVE the arranged image
+}
+
+SET working directory to results path
+Bubble plotting function for TNBC
+Bubble plotting function for ER+
+
