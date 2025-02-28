@@ -1,6 +1,6 @@
 # Cellchat object creation from Seurat objects
 ###########################################################
-# Esther Sauras Colon, 2024-06-19
+# Esther Sauras Colon & Adrienne Parsons, 2025-02-28
 
 # Prerequisite packages
 library(dplyr)
@@ -302,3 +302,218 @@ options(future.globals.maxSize = 600 * 1024^2) # default: 500 * 1024^2 = 500 MiB
 cc.list <- lapply(cc.list, function(x) computeCommunProb(x, population.size = psize))
 
 lapply(names(cc.list), function(x) saveRDS(cc.list[[x]], paste0(data_path,"/",x,"_computeCommunProb_psize_",psize,"_",cellgroup,".Rdata")))
+
+# ___________________________________________________________________________________________
+# Creating single-patient CellChat objects
+
+# options(Seurat.object.assay.version = "v5")
+# Load the SWARBRICK dataset, available for download through the Broad Single-Cell portal at https://singlecell.broadinstitute.org/single_cell/study/SCP1039
+# Also available at GEO Accession # GSE176078
+data_path <- "<YOUR DATA PATH>"
+options(Seurat.object.assay.version = "v5")
+
+# Function to recursively read scRNAseq data using read10x and create seurat objects including metadata
+datasheet <- "metadata.csv"
+read_scRNAseq_data <- function(directory_path) {
+  # Get a list of the folders in the directory
+  file_list <- list.files(path = directory_path, recursive = FALSE, full.names = TRUE)
+  # Create a list to store Seurat objects
+  seurat_list <- list()
+  # Loop through each file
+  for (file_path in file_list) {
+    # File with the associated metadata
+    metadatafiles <- read.csv(file.path(file_path, datasheet))
+    # Read the 10x Genomics data using Read10X
+    seurat_read <- Read10X(data.dir = file_path, gene.column=1)
+    # Create the seurat object
+    seurat_obj <- CreateSeuratObject(counts = seurat_read, project = "swb", 
+                                     meta.data = metadatafiles,
+                                     min.cells = 3, min.features = 200)
+    # Add the Seurat object to the list
+    seurat_list[[file_path]] <- list(seurat_read, seurat_obj)
+  }
+  # Return the list of Seurat objects
+  return(seurat_list)
+}
+
+# Specify the path to the 'Data_Swarbrick' folder
+data_folder_path <- data_path
+# Call the function to read scRNAseq data recursively
+scRNAseq_data <- seurat_list
+
+matrix_all <- sapply(scRNAseq_data,function(x) x[1])
+seurat_object_all <- sapply(scRNAseq_data,function(x) x[2])
+
+# Merge all the seurat objects in one
+seu_all <- merge(x = seurat_object_all[[1]], y = seurat_object_all[-1])
+Layers(seu_all) # Same as Layers(seu_all[["RNA]])
+
+# Select ER+ & TNBC (21 patients = 80753 samples)
+seu_er_tnbc <- subset(seu_all, subset = subtype == "ER+" | subtype == "TNBC")
+# Change ER+ to ER
+seu_er_tnbc$subtype <- replace(seu_er_tnbc$subtype,seu_er_tnbc$subtype=="ER+","ER")
+
+# QC selection
+seu_def <- subset(seu_er_tnbc, subset = nFeature_RNA > 200 & nFeature_RNA < 5000 & percent.mito < 20)
+
+# Add patients' age to the object
+agedb <- read.xlsx2(paste0(directory_path,"/wu,swarbrick2021 - Supplement.xlsx"), sheetIndex = 1, startRow = 4)
+agedb <- agedb[agedb$Subtype.by.IHC == "ER+"|agedb$Subtype.by.IHC == "TNBC",]
+agedb <- agedb[,c(1,3)]
+agedb$Case.ID <- str_sub(agedb$Case.ID,1,4)
+colnames(agedb) <- c("ID","age")
+
+seu_def[["ID"]] <- str_sub(seu_def$orig.ident,4,7)
+seu_def[["age"]] <- merge(seu_def@meta.data,agedb,by="ID")
+seu_def[["ID"]] <- NULL
+
+# Set the ligand-receptor interaction database
+CellChatDB <- CellChatDB.human 
+
+# scRNAseq preprocessing
+seu_def <- NormalizeData(seu_def)
+seu_def <- FindVariableFeatures(seu_def)
+seu_def <- ScaleData(seu_def)
+seu_def <- RunPCA(seu_def)
+seu_def <- FindNeighbors(seu_def, dims = 1:30, reduction = "pca")
+seu_def <- FindClusters(seu_def, resolution = 2, cluster.name = "unintegrated_clusters")
+
+# Running in parallel
+future::plan("multisession", workers = 4)
+options(future.globals.maxSize = 600 * 1024^2)
+
+# For each patient:
+for(ident in unique(seu_def$orig.ident)){
+  print(ident)
+  
+  # Subset to that patient
+  seu <- subset(seu_def, subset = orig.ident == ident)
+  
+  # For the celltype_major and celltype_minor annotations:
+  for(cellgroup in c("celltype_major", "celltype_minor")){
+    print(cellgroup)
+    
+    # Make a cellchat object of the single patient for that annotation group
+    cellchat <- createCellChat(object = seu, group.by = cellgroup, assay = "RNA")
+    cellchat@DB <- CellChatDB
+    
+    # CellChat object preprocessing
+    cellchat <- subsetData(cellchat)
+    cellchat <- identifyOverExpressedGenes(cellchat)
+    cellchat <- identifyOverExpressedInteractions(cellchat)
+    cellchat <- computeCommunProb(cellchat, population.size = T)
+    
+    # Save
+    saveRDS(cellchat, paste0(ident,"_computeCommunProb_psize_T_" ,cellgroup,".Rdata"))
+    
+  }
+}# options(Seurat.object.assay.version = "v5")
+# Load the SWARBRICK dataset, available for download through the Broad Single-Cell portal at https://singlecell.broadinstitute.org/single_cell/study/SCP1039
+# Also available at GEO Accession # GSE176078
+
+data_path <- "<YOUR DATA PATH>"
+options(Seurat.object.assay.version = "v5")
+
+# Function to recursively read scRNAseq data using read10x and create seurat objects including metadata
+datasheet <- "metadata.csv"
+read_scRNAseq_data <- function(directory_path) {
+  # Get a list of the folders in the directory
+  file_list <- list.files(path = directory_path, recursive = FALSE, full.names = TRUE)
+  # Create a list to store Seurat objects
+  seurat_list <- list()
+  # Loop through each file
+  for (file_path in file_list) {
+    # File with the associated metadata
+    metadatafiles <- read.csv(file.path(file_path, datasheet))
+    # Read the 10x Genomics data using Read10X
+    seurat_read <- Read10X(data.dir = file_path, gene.column=1)
+    # Create the seurat object
+    seurat_obj <- CreateSeuratObject(counts = seurat_read, project = "swb", 
+                                     meta.data = metadatafiles,
+                                     min.cells = 3, min.features = 200)
+    # Add the Seurat object to the list
+    seurat_list[[file_path]] <- list(seurat_read, seurat_obj)
+  }
+  # Return the list of Seurat objects
+  return(seurat_list)
+}
+
+# Specify the path to the 'Data_Swarbrick' folder
+data_folder_path <- data_path
+# Call the function to read scRNAseq data recursively
+scRNAseq_data <- seurat_list
+
+matrix_all <- sapply(scRNAseq_data,function(x) x[1])
+seurat_object_all <- sapply(scRNAseq_data,function(x) x[2])
+
+# Merge all the seurat objects in one
+seu_all <- merge(x = seurat_object_all[[1]], y = seurat_object_all[-1])
+Layers(seu_all) # Same as Layers(seu_all[["RNA]])
+
+# Select ER+ & TNBC (21 patients = 80753 samples)
+seu_er_tnbc <- subset(seu_all, subset = subtype == "ER+" | subtype == "TNBC")
+# Change ER+ to ER
+seu_er_tnbc$subtype <- replace(seu_er_tnbc$subtype,seu_er_tnbc$subtype=="ER+","ER")
+
+# QC selection
+seu_def <- subset(seu_er_tnbc, subset = nFeature_RNA > 200 & nFeature_RNA < 5000 & percent.mito < 20)
+
+# Add patients' age to the object
+agedb <- read.xlsx2(paste0(directory_path,"/wu,swarbrick2021 - Supplement.xlsx"), sheetIndex = 1, startRow = 4)
+agedb <- agedb[agedb$Subtype.by.IHC == "ER+"|agedb$Subtype.by.IHC == "TNBC",]
+agedb <- agedb[,c(1,3)]
+agedb$Case.ID <- str_sub(agedb$Case.ID,1,4)
+colnames(agedb) <- c("ID","age")
+
+seu_def[["ID"]] <- str_sub(seu_def$orig.ident,4,7)
+seu_def[["age"]] <- merge(seu_def@meta.data,agedb,by="ID")
+seu_def[["ID"]] <- NULL
+
+# Set the ligand-receptor interaction database
+CellChatDB <- CellChatDB.human 
+
+# scRNAseq preprocessing
+seu_def <- NormalizeData(seu_def)
+seu_def <- FindVariableFeatures(seu_def)
+seu_def <- ScaleData(seu_def)
+seu_def <- RunPCA(seu_def)
+seu_def <- FindNeighbors(seu_def, dims = 1:30, reduction = "pca")
+seu_def <- FindClusters(seu_def, resolution = 2, cluster.name = "unintegrated_clusters")
+
+# Running in parallel
+future::plan("multisession", workers = 4)
+options(future.globals.maxSize = 600 * 1024^2)
+
+# For each patient:
+for(ident in unique(seu_def$orig.ident)){
+  print(ident)
+  
+  # Subset to that patient
+  seu <- subset(seu_def, subset = orig.ident == ident)
+  
+  # For the celltype_major and celltype_minor annotations:
+  for(cellgroup in c("celltype_major", "celltype_minor")){
+    print(cellgroup)
+    
+    # Make a cellchat object of the single patient for that annotation group
+    cellchat <- createCellChat(object = seu, group.by = cellgroup, assay = "RNA")
+    cellchat@DB <- CellChatDB
+    
+    # CellChat object preprocessing
+    cellchat <- subsetData(cellchat)
+    cellchat <- identifyOverExpressedGenes(cellchat)
+    cellchat <- identifyOverExpressedInteractions(cellchat)
+    cellchat <- computeCommunProb(cellchat, population.size = T)
+    
+    # Save
+    saveRDS(cellchat, paste0(ident,"_computeCommunProb_psize_T_" ,cellgroup,".Rdata"))
+    
+  }
+}
+
+
+
+
+
+
+
