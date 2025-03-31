@@ -1,6 +1,7 @@
 # Figure 3: ASPEN analysis on Hallmark pathways
 ###########################################################
 # Adrienne Parsons & Peter van Galen, 2024-09-10
+# Pseudocode for this document is available in the file "ASPEN Pseudocode.txt"
 
 # Prerequisites -----------------------------------------------------------------------------------
 library(tidyverse)
