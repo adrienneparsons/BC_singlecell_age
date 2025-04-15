@@ -1,4 +1,5 @@
 ASPEN Pseudocode
+This pseudocode outlines the steps of the file "3 Aspen.R"
 
 Adrienne Parsons, 2/20/2025
 
@@ -167,7 +168,7 @@ SET subtype-specific master data function(input = subtype string){
 			ASSIGN to global environment the numeric correlation vector with cell type and subtype as name
 		  }
 	}
-SET working directory to wher gmt file is stored
+SET working directory to where gmt file is stored
 SET GO_file to be gmt of interest
 SET results data frame for GSEA results
 FOR(cell type index in 1:number of cell types){
