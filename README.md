@@ -82,6 +82,16 @@ Finally, to visualize the age-associated differences in celltype_minor to cellty
 
 ![Heatmaps.](/www/heatmaps.png)
 
+This script also includes steps for comparing age-associated differences in CellChat communication probabilities from CellChat objects made from individual patietnts. It first creates a summary heat map of the communication probabilities of major cell types from the aggregate data analyzed thus far:
+
+![Aggregate Heatmap.](/www/all_cohort_heatmap.png)
+
+It then uses the CellChat objects created for individual patients to visualize major cell type communication between cell types of interest by age, and then averaged by age groups.
+
+![All Age Heatmap.](/www/communication_byage.png)
+![Average Heatmap.](/www/communication_byagegroup.png)
+
+
 ### Assessment of ESR1 and MHCII genes by cell type in ER+ and TNBC
 Runtime using full dataset: 6 minutes, 15 seconds
 
