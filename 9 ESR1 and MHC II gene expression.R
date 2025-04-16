@@ -1,4 +1,4 @@
-# Figure S7: ESR1 and MHC II gene analysis
+# Extended Data Figure 6: ESR1 and MHC II gene analysis
 ###########################################################
 # Adrienne Parsons, 2024-05-30
 

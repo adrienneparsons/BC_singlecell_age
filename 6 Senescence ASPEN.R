@@ -1,4 +1,4 @@
-# Figure S6: ASPEN on senescence-associated pathways
+# Extended Data Figure 4: ASPEN on senescence-associated pathways
 ###########################################################
 # Adrienne Parsons, 2024-09-10
 

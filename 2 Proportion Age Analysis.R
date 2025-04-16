@@ -1,4 +1,4 @@
-# Figures S2 ad S3: Proportion analysis with age
+# Extended Data Figures S2 and S3: Proportion analysis with age
 ###########################################################
 # Adrienne Parsons, 2024-09-10
 

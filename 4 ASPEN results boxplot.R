@@ -1,4 +1,4 @@
-# Figure S4: ASPEN results boxplot
+# Figure 2: ASPEN results boxplot
 ###########################################################
 # Adrienne Parsons, 2024-09-10
 

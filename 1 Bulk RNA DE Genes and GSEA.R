@@ -1,4 +1,4 @@
-# Figure 1: DE gene analysis and GSEA, METABRIC and TCGA
+# Figure 1 and Extended Data Figure 1: DE gene analysis and GSEA, METABRIC and TCGA
 ###########################################################
 # Adrienne Parsons and Esther Sauras Colon, 2025-01-14
 # Get the DE genes between old and young ER+ and TNBC donors in METABRIC and TCGA

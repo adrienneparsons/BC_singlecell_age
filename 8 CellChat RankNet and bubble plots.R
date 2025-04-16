@@ -1,4 +1,4 @@
-# Figures 5, 6, S8, S9, S10: CellChat RankNet plots and Bubble Plots
+# Figures 6 and 7, Extended Data Figures 7, 8, 9: CellChat RankNet plots and Bubble Plots
 ###########################################################
 # Esther Sauras Colon and Adrienne Parsons, 2024-07-08
 

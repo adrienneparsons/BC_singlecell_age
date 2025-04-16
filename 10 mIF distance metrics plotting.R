@@ -1,4 +1,4 @@
-# Figure 4 i and j: Age associations in mIF images
+# Figure 4: Age associations in mIF images
 ###########################################################
 # Hanyun Z and Adrienne Parsons, 2025-03-05
 

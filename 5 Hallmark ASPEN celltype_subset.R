@@ -1,4 +1,4 @@
-# Figure S5: ASPEN on Hallmark pathways by celltype_subset
+# Extended Data Figure 4: ASPEN on Hallmark pathways by celltype_subset
 ###########################################################
 # Adrienne Parsons, 2024-09-10
 

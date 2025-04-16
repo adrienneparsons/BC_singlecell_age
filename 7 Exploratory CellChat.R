@@ -1,4 +1,4 @@
-# Figure 4: Comparison analysis of multiple datasets using CellChat
+# Figure 5 and Extended Data Figure 5: Comparison analysis of multiple datasets using CellChat
 ###########################################################
 # Esther Sauras Colon & Adrienne Parsons, 2025-02-28
 
